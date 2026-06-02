@@ -1,0 +1,202 @@
+'use client'
+
+import { useRef, useState, useTransition, type DragEvent } from 'react'
+import { Upload, Loader2, FolderPlus } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import { uploadFile, createFolder } from '../_actions/drive'
+
+type Props = {
+  folderId: string | null
+}
+
+export function DriveHeader({ folderId }: Props) {
+  const inputRef = useRef<HTMLInputElement>(null)
+  const [isUploading, startUpload] = useTransition()
+  const [isCreating, startCreate] = useTransition()
+  const [isDragging, setIsDragging] = useState(false)
+  const [errorMsg, setErrorMsg] = useState<string | null>(null)
+  const [newFolderOpen, setNewFolderOpen] = useState(false)
+  const [folderName, setFolderName] = useState('')
+  const [folderError, setFolderError] = useState<string | null>(null)
+  const dragCounter = useRef(0)
+
+  const isPending = isUploading || isCreating
+
+  // ─── Upload ───────────────────────────────────────────────────────────────
+
+  const uploadFiles = (fileList: FileList | File[]) => {
+    const files = Array.from(fileList)
+    if (files.length === 0) return
+    setErrorMsg(null)
+    startUpload(async () => {
+      for (const file of files) {
+        const formData = new FormData()
+        formData.append('file', file)
+        if (folderId) formData.append('folderId', folderId)
+        const result = await uploadFile(formData)
+        if (!result.success) {
+          setErrorMsg(`${file.name} 업로드 실패: ${result.error ?? '알 수 없는 오류'}`)
+        }
+      }
+    })
+  }
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files) return
+    uploadFiles(e.target.files)
+    e.target.value = ''
+  }
+
+  // ─── Drag & drop ─────────────────────────────────────────────────────────
+
+  const handleDragEnter = (e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (!e.dataTransfer.types.includes('Files')) return
+    dragCounter.current += 1
+    setIsDragging(true)
+  }
+
+  const handleDragLeave = (e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault()
+    e.stopPropagation()
+    dragCounter.current = Math.max(0, dragCounter.current - 1)
+    if (dragCounter.current === 0) setIsDragging(false)
+  }
+
+  const handleDragOver = (e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault()
+    e.stopPropagation()
+    e.dataTransfer.dropEffect = 'copy'
+  }
+
+  const handleDrop = (e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault()
+    e.stopPropagation()
+    dragCounter.current = 0
+    setIsDragging(false)
+    if (e.dataTransfer.files?.length) uploadFiles(e.dataTransfer.files)
+  }
+
+  // ─── Create folder ────────────────────────────────────────────────────────
+
+  const openNewFolder = () => {
+    setFolderName('')
+    setFolderError(null)
+    setNewFolderOpen(true)
+  }
+
+  const handleCreateFolder = () => {
+    setFolderError(null)
+    startCreate(async () => {
+      const result = await createFolder(folderName, folderId)
+      if (!result.success) {
+        setFolderError(result.error ?? '폴더 생성에 실패했습니다')
+        return
+      }
+      setNewFolderOpen(false)
+    })
+  }
+
+  return (
+    <>
+      <div
+        onDragEnter={handleDragEnter}
+        onDragLeave={handleDragLeave}
+        onDragOver={handleDragOver}
+        onDrop={handleDrop}
+        className="relative"
+      >
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <div>
+            <h1 className="text-2xl font-bold">드라이브</h1>
+            <p className="text-sm text-muted-foreground">
+              파일을 업로드하고 미리보기로 빠르게 확인하세요.
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <input
+              ref={inputRef}
+              type="file"
+              multiple
+              onChange={handleInputChange}
+              className="hidden"
+              aria-hidden="true"
+            />
+            <Button variant="outline" onClick={openNewFolder} disabled={isPending}>
+              <FolderPlus size={14} />
+              <span>새 폴더</span>
+            </Button>
+            <Button onClick={() => !isPending && inputRef.current?.click()} disabled={isPending}>
+              {isUploading ? (
+                <>
+                  <Loader2 size={14} className="animate-spin" />
+                  <span>업로드 중...</span>
+                </>
+              ) : (
+                <>
+                  <Upload size={14} />
+                  <span>파일 업로드</span>
+                </>
+              )}
+            </Button>
+          </div>
+        </div>
+
+        {errorMsg && <p className="mt-2 text-xs text-destructive">{errorMsg}</p>}
+
+        {isDragging && (
+          <div className="pointer-events-none fixed inset-0 z-40 flex items-center justify-center bg-primary/5 backdrop-blur-sm">
+            <div className="rounded-xl border-2 border-dashed border-primary bg-background/95 px-10 py-8 shadow-lg">
+              <Upload size={32} className="mx-auto text-primary mb-2" />
+              <p className="text-sm font-medium text-center">여기에 파일을 놓으면 업로드됩니다</p>
+            </div>
+          </div>
+        )}
+      </div>
+
+      <Dialog open={newFolderOpen} onOpenChange={setNewFolderOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>새 폴더</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Input
+              value={folderName}
+              onChange={(e) => setFolderName(e.target.value)}
+              autoFocus
+              placeholder="폴더 이름"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault()
+                  handleCreateFolder()
+                }
+              }}
+            />
+            {folderError && <p className="text-xs text-destructive">{folderError}</p>}
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setNewFolderOpen(false)}
+              disabled={isCreating}
+            >
+              취소
+            </Button>
+            <Button onClick={handleCreateFolder} disabled={isCreating}>
+              {isCreating ? '생성 중...' : '만들기'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
+  )
+}
