@@ -171,6 +171,7 @@ model Portfolio {
   ownerId         String
   driveFolderId   String   @unique
   thumbnailFileId String?
+  isPublic        Boolean  @default(false)
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
@@ -214,7 +215,7 @@ model PortfolioImage {
 model Memo {
   id        String   @id @default(cuid())
   title     String
-  content   String
+  content   String   @db.Text
   ownerId   String
   projectId String?
   createdAt DateTime @default(now())

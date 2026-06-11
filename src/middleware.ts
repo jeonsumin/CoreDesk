@@ -7,7 +7,9 @@ export default auth((req) => {
     req.nextUrl.pathname.startsWith('/login') ||
     req.nextUrl.pathname.startsWith('/register')
 
-  if (!isAuthenticated && !isAuthPage) {
+  const isPublicPage = req.nextUrl.pathname.startsWith('/portfolio/')
+
+  if (!isAuthenticated && !isAuthPage && !isPublicPage) {
     return NextResponse.redirect(new URL('/login', req.url))
   }
 

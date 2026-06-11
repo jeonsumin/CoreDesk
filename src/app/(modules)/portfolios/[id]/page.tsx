@@ -14,6 +14,7 @@ import { toStringArray } from '@/lib/json-array'
 import { portfolioLinkTypeLabels } from '@/lib/portfolio/validation'
 import { prisma } from '@/lib/prisma'
 import { PortfolioDeleteButton } from '../_components/PortfolioDeleteButton'
+import { PortfolioPublicToggle } from '../_components/PortfolioPublicToggle'
 
 type Props = {
   params: Promise<{ id: string }>
@@ -63,6 +64,7 @@ export default async function PortfolioDetailPage({ params }: Props) {
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          <PortfolioPublicToggle id={portfolio.id} isPublic={portfolio.isPublic} />
           <Link
             href={`/drive?folderId=${portfolio.driveFolderId}`}
             className={buttonVariants({ variant: 'outline' })}

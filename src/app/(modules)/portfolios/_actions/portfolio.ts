@@ -244,3 +244,19 @@ export async function deletePortfolioFormAction(id: string): Promise<void> {
   const result = await deletePortfolio(id)
   if (result.error) throw new Error(result.error)
 }
+
+export async function togglePortfolioPublic(id: string): Promise<ActionResult> {
+  const ownerId = await ensureAuthenticated()
+  const portfolio = await prisma.portfolio.findUnique({ where: { id } })
+  if (!portfolio || portfolio.ownerId !== ownerId) {
+    return { error: '포트폴리오를 찾을 수 없습니다' }
+  }
+  await prisma.portfolio.update({
+    where: { id },
+    data: { isPublic: !portfolio.isPublic },
+  })
+  revalidatePath(`/portfolios/${id}`)
+  revalidatePath('/portfolios')
+  revalidatePath(`/portfolio/${id}`)
+  return {}
+}
