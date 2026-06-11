@@ -55,3 +55,7 @@ export async function GET(
 
   return new NextResponse(new Uint8Array(buffer), { headers })
 }
+
+export async function OPTIONS() {
+  return new NextResponse(null, { status: 204 })
+}

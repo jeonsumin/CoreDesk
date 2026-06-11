@@ -33,3 +33,7 @@ export async function GET(req: NextRequest) {
 
   return NextResponse.json(data)
 }
+
+export async function OPTIONS() {
+  return new NextResponse(null, { status: 204 })
+}
