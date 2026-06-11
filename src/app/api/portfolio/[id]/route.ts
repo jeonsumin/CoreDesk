@@ -59,3 +59,7 @@ export async function GET(
     updatedAt: portfolio.updatedAt,
   })
 }
+
+export async function OPTIONS() {
+  return new NextResponse(null, { status: 204 })
+}
