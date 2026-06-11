@@ -19,7 +19,7 @@ export async function GET(req: NextRequest) {
     orderBy: { createdAt: 'desc' },
   })
 
-  const base = req.nextUrl.origin
+  const base = process.env.NEXTAUTH_URL ?? req.nextUrl.origin
 
   const data = portfolios.map((p) => ({
     id: p.id,

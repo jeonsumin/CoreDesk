@@ -38,7 +38,7 @@ export async function GET(
     return new NextResponse('Not Found', { status: 404 })
   }
 
-  const base = req.nextUrl.origin
+  const base = process.env.NEXTAUTH_URL ?? req.nextUrl.origin
 
   return NextResponse.json({
     id: portfolio.id,
