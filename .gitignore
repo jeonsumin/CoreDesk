@@ -48,3 +48,6 @@ phases/**/step*-output.json
 
 # drive module uploads (user-uploaded files)
 /uploads
+
+.claude/
+.serena/
