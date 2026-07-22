@@ -1,0 +1,12 @@
+html, body { background: white; margin:0; padding:0;min-height:100vh;}
+
+.clean-table{ border-collapse: separate; border-spacing: 0; border:1px solid #EAECF0; border-radius: 8px; margin-bottom:1.5rem; overflow: hidden; background: white;}
+.clean-table th, .clean-table td { border-top: 1px solid #EAECF0; padding: 10px 24px; text-align: left; }
+.clean-table th, .clean-table td { border-right: 1px solid #EAECF0;}
+
+.clean-table th { background-color: #F2F4F7; color: #667085; font-family: var(--font-sans); font-weight: 500; font-size: 0.75rem; line-height: 1.125rem; letter-spacing: 0; border-bottom: 1px solid #EAECF0; text-transform: none;}
+.clean-table thead tr:first-child th, .clean-table tbody tr:first-child td { border-top: none;}
+.clean-table th:first-child, .clean td:first-child {border-left: none;}
+.clean-table th:last-child, .clean td:last-child {border-right: none;}
+.clean-table tbody tr:last-child td{ border-bottom: none;}
+

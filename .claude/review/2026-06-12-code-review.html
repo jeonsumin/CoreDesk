@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Code Review — 2026-06-12</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #0f1117; color: #e2e8f0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; line-height: 1.6; padding: 32px 24px; }
+  a { color: #7dd3fc; }
+  .container { max-width: 900px; margin: 0 auto; }
+
+  /* Header */
+  .header { border-bottom: 1px solid #2d3748; padding-bottom: 20px; margin-bottom: 28px; }
+  .header h1 { font-size: 22px; font-weight: 700; color: #f8fafc; margin-bottom: 10px; }
+  .meta { display: flex; flex-wrap: wrap; gap: 10px; }
+  .badge { background: #1e293b; border: 1px solid #334155; border-radius: 6px; padding: 3px 10px; font-size: 12px; color: #94a3b8; font-family: monospace; }
+
+  /* Summary */
+  .summary { background: #1a1f2e; border: 1px solid #2d3748; border-radius: 8px; padding: 16px 20px; margin-bottom: 28px; }
+  .summary p { color: #cbd5e1; }
+
+  /* Stats */
+  .stats { display: flex; gap: 12px; margin-bottom: 28px; flex-wrap: wrap; }
+  .stat-card { flex: 1; min-width: 120px; background: #1a1f2e; border-radius: 8px; padding: 14px 18px; text-align: center; border: 1px solid #2d3748; }
+  .stat-card .num { font-size: 28px; font-weight: 700; }
+  .stat-card .label { font-size: 11px; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 2px; }
+  .critical .num { color: #ff6b6b; }
+  .major .num { color: #ffaa4d; }
+  .minor .num { color: #ffd166; }
+  .good .num { color: #6ee7b7; }
+
+  /* Sections */
+  h2 { font-size: 16px; font-weight: 600; color: #f1f5f9; margin-bottom: 14px; padding-bottom: 6px; border-bottom: 1px solid #2d3748; }
+  h3 { font-size: 13px; font-weight: 600; color: #f1f5f9; margin-bottom: 10px; }
+  section { margin-bottom: 32px; }
+
+  /* Good list */
+  .good-list { list-style: none; display: flex; flex-direction: column; gap: 6px; }
+  .good-list li { background: #0d2218; border: 1px solid #166534; border-radius: 6px; padding: 8px 12px; color: #86efac; font-size: 13px; }
+  .good-list li::before { content: "✓ "; color: #4ade80; }
+
+  /* Issue card */
+  .issue-card { background: #1a1f2e; border-radius: 8px; padding: 18px 20px; margin-bottom: 14px; border-left: 4px solid; }
+  .issue-card.major { border-left-color: #ffaa4d; }
+  .issue-card.minor { border-left-color: #ffd166; }
+  .issue-card .issue-title { font-size: 14px; font-weight: 600; color: #f1f5f9; margin-bottom: 8px; }
+  .issue-card .severity { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin-right: 8px; }
+  .issue-card.major .severity { color: #ffaa4d; }
+  .issue-card.minor .severity { color: #ffd166; }
+  .file-badge { background: #0f172a; border: 1px solid #334155; border-radius: 4px; padding: 2px 8px; font-size: 11px; font-family: monospace; color: #7dd3fc; }
+  .issue-desc { color: #94a3b8; margin: 10px 0; font-size: 13px; }
+
+  /* Code block */
+  pre { background: #0d1117; border: 1px solid #30363d; border-radius: 6px; padding: 14px 16px; overflow-x: auto; font-size: 12px; font-family: 'SF Mono', 'Fira Code', monospace; margin: 10px 0; }
+  .code-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600; margin-bottom: 4px; }
+  .code-before .code-label { color: #ff6b6b; }
+  .code-after .code-label { color: #6ee7b7; }
+  code { color: #e2e8f0; }
+  .comment { color: #6b7280; }
+  .keyword { color: #ff79c6; }
+  .string { color: #f1fa8c; }
+  .fn { color: #50fa7b; }
+
+  /* Action table */
+  table { width: 100%; border-collapse: collapse; }
+  th { background: #1e293b; color: #94a3b8; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; padding: 8px 12px; text-align: left; }
+  td { padding: 9px 12px; border-bottom: 1px solid #1e293b; font-size: 13px; vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+  .p0 { background: #2d1414; }
+  .p1 { background: #2d2014; }
+  .p2 { background: #1a1f2e; }
+  .priority { font-weight: 700; font-size: 12px; }
+  .p0 .priority { color: #ff6b6b; }
+  .p1 .priority { color: #ffaa4d; }
+  .p2 .priority { color: #ffd166; }
+  .file-code { font-family: monospace; font-size: 12px; color: #7dd3fc; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="header">
+    <h1>Code Review — 2026-06-12</h1>
+    <div class="meta">
+      <span class="badge">branch: master</span>
+      <span class="badge">vs origin/main (+6 commits)</span>
+      <span class="badge">git diff origin/main..HEAD</span>
+    </div>
+  </div>
+
+  <div class="summary">
+    <p>포트폴리오 공개 기능과 외부 API를 안정적으로 추가했다. CORS 및 인증 미들웨어 분리는 올바르게 처리됐으나, 클라이언트 사이드에서 공개 URL을 생성하는 로직이 방금 API에서 수정한 localhost 문제를 그대로 가지고 있다.</p>
+  </div>
+
+  <div class="stats">
+    <div class="stat-card critical"><div class="num">0</div><div class="label">Critical</div></div>
+    <div class="stat-card major"><div class="num">2</div><div class="label">Major</div></div>
+    <div class="stat-card minor"><div class="num">2</div><div class="label">Minor</div></div>
+    <div class="stat-card good"><div class="num">4</div><div class="label">잘 된 부분</div></div>
+  </div>
+
+  <section>
+    <h2>잘 된 부분</h2>
+    <ul class="good-list">
+      <li>middleware.ts matcher로 /api/* 전체를 미들웨어 밖에 두고, /portfolio/* 만 isPublicPage 예외 처리 — 인증 로직 깔끔하게 분리</li>
+      <li>togglePortfolioPublic Server Action에서 ownerId 검증 후 토글 — 권한 체크 누락 없음</li>
+      <li>images/[id]/route.ts에서 이미지 접근 전 isPublic 포트폴리오 소속 여부 검증 — 비공개 파일 노출 방지</li>
+      <li>revalidatePath를 /portfolios, /portfolios/${id}, /portfolio/${id} 세 경로 모두 호출 — 공개/비공개 전환 시 캐시 일관성 유지</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>🟠 Major</h2>
+
+    <div class="issue-card major">
+      <div class="issue-title"><span class="severity">Major</span>1. 공개 URL 복사가 window.location.origin 기반 — localhost 문제 재발</div>
+      <span class="file-badge">PortfolioPublicToggle.tsx:35</span>
+      <p class="issue-desc">관리자가 서버 내부(http://localhost:3000)에서 앱에 접근하면 복사된 URL도 http://localhost:3000/portfolio/...가 된다. API 이미지 URL에서 방금 수정한 것과 동일한 문제다.</p>
+
+      <div class="code-before">
+        <div class="code-label">Before</div>
+        <pre><code><span class="keyword">const</span> url = <span class="string">`${window.location.origin}/portfolio/${id}`</span></code></pre>
+      </div>
+
+      <div class="code-after">
+        <div class="code-label">After — 방법 A: NEXT_PUBLIC_APP_URL 환경변수 추가 (권장)</div>
+        <pre><code><span class="comment">// .env</span>
+NEXT_PUBLIC_APP_URL=<span class="string">"https://your-domain.com"</span>
+
+<span class="comment">// PortfolioPublicToggle.tsx</span>
+<span class="keyword">const</span> base = process.env.NEXT_PUBLIC_APP_URL ?? window.location.origin
+<span class="keyword">const</span> url = <span class="string">`${base}/portfolio/${id}`</span></code></pre>
+      </div>
+
+      <div class="code-after">
+        <div class="code-label">After — 방법 B: 서버 컴포넌트에서 prop으로 전달</div>
+        <pre><code><span class="comment">// portfolios/[id]/page.tsx (Server Component)</span>
+<span class="keyword">const</span> publicUrl = <span class="string">`${process.env.NEXTAUTH_URL ?? ''}/portfolio/${portfolio.id}`</span>
+
+&lt;PortfolioPublicToggle id={portfolio.id} isPublic={portfolio.isPublic} publicUrl={publicUrl} /&gt;</code></pre>
+      </div>
+    </div>
+
+    <div class="issue-card major">
+      <div class="issue-title"><span class="severity">Major</span>2. &lt;img&gt; 태그 직접 사용 — 이미지 최적화 누락</div>
+      <span class="file-badge">portfolio/[id]/page.tsx:76</span>&nbsp;<span class="file-badge">portfolio/[id]/page.tsx:101</span>
+      <p class="issue-desc">공개 포트폴리오 페이지는 외부 사용자가 접근하는 퍼블릭 페이지다. eslint-disable 주석으로 Next.js 경고를 억제하고 &lt;img&gt;를 사용해 WebP 변환, 크기 최적화, 지연 로딩이 빠진다. /api/portfolio/images/* 는 내부 라우트이므로 remotePatterns 등록 없이 상대 경로로 next/image 사용 가능하다.</p>
+
+      <div class="code-before">
+        <div class="code-label">Before</div>
+        <pre><code><span class="comment">// eslint-disable-next-line @next/next/no-img-element</span>
+&lt;<span class="keyword">img</span>
+  src={publicImageUrl(portfolio.thumbnailFile.id)}
+  alt={`${portfolio.title} 썸네일`}
+  className=<span class="string">"h-full w-full object-cover"</span>
+/&gt;</code></pre>
+      </div>
+
+      <div class="code-after">
+        <div class="code-label">After</div>
+        <pre><code><span class="keyword">import</span> Image <span class="keyword">from</span> <span class="string">'next/image'</span>
+
+&lt;<span class="keyword">Image</span>
+  src={publicImageUrl(portfolio.thumbnailFile.id)}
+  alt={`${portfolio.title} 썸네일`}
+  fill
+  className=<span class="string">"object-cover"</span>
+/&gt;</code></pre>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>🟡 Minor</h2>
+
+    <div class="issue-card minor">
+      <div class="issue-title"><span class="severity">Minor</span>3. 두 번의 순차 DB 조회 — 단일 OR 쿼리로 통합 가능</div>
+      <span class="file-badge">images/[id]/route.ts:18-33</span>
+      <p class="issue-desc">현재 단락 평가 방식이지만 단일 OR 쿼리가 더 직관적이다.</p>
+
+      <div class="code-before">
+        <div class="code-label">Before</div>
+        <pre><code><span class="keyword">const</span> portfolioByImage = <span class="keyword">await</span> prisma.portfolio.<span class="fn">findFirst</span>({
+  where: { isPublic: <span class="keyword">true</span>, images: { some: { fileId: id } } },
+})
+<span class="keyword">const</span> portfolioByThumbnail = portfolioByImage
+  ? <span class="keyword">null</span>
+  : <span class="keyword">await</span> prisma.portfolio.<span class="fn">findFirst</span>({
+      where: { isPublic: <span class="keyword">true</span>, thumbnailFileId: id },
+    })</code></pre>
+      </div>
+
+      <div class="code-after">
+        <div class="code-label">After</div>
+        <pre><code><span class="keyword">const</span> portfolio = <span class="keyword">await</span> prisma.portfolio.<span class="fn">findFirst</span>({
+  where: {
+    isPublic: <span class="keyword">true</span>,
+    OR: [
+      { thumbnailFileId: id },
+      { images: { some: { fileId: id } } },
+    ],
+  },
+  select: { id: <span class="keyword">true</span> },
+})
+<span class="keyword">if</span> (!portfolio) <span class="keyword">return new</span> <span class="fn">NextResponse</span>(<span class="string">'Not Found'</span>, { status: <span class="string">404</span> })</code></pre>
+      </div>
+    </div>
+
+    <div class="issue-card minor">
+      <div class="issue-title"><span class="severity">Minor</span>4. 코드 설명 주석 — CLAUDE.md 규칙 위반</div>
+      <span class="file-badge">images/[id]/route.ts:17</span>
+      <p class="issue-desc">코드 자체로 의도가 명확하므로 제거 대상.</p>
+      <pre><code><span class="comment">// Check if this file belongs to a public portfolio (as image or thumbnail)</span>
+<span class="comment">// ↑ 제거</span></code></pre>
+    </div>
+  </section>
+
+  <section>
+    <h2>우선순위별 액션 아이템</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>우선순위</th>
+          <th>#</th>
+          <th>파일</th>
+          <th>이슈</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="p0">
+          <td><span class="priority">P0</span></td>
+          <td>1</td>
+          <td><span class="file-code">PortfolioPublicToggle.tsx:35</span></td>
+          <td>URL 복사 시 window.location.origin → NEXT_PUBLIC_APP_URL</td>
+        </tr>
+        <tr class="p1">
+          <td><span class="priority">P1</span></td>
+          <td>2</td>
+          <td><span class="file-code">portfolio/[id]/page.tsx:76,101</span></td>
+          <td>&lt;img&gt; → next/image</td>
+        </tr>
+        <tr class="p2">
+          <td><span class="priority">P2</span></td>
+          <td>3</td>
+          <td><span class="file-code">images/[id]/route.ts:18-33</span></td>
+          <td>순차 쿼리 → 단일 OR 쿼리</td>
+        </tr>
+        <tr class="p2">
+          <td><span class="priority">P2</span></td>
+          <td>4</td>
+          <td><span class="file-code">images/[id]/route.ts:17</span></td>
+          <td>코드 설명 주석 제거</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+</div>
+</body>
+</html>
