@@ -1,0 +1,29 @@
+# ingress-nginx 사용 시.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: coredesk
+  namespace: coredesk
+  annotations:
+    # 드라이브 업로드가 서버 액션으로 최대 50MB 를 받는다.
+    nginx.ingress.kubernetes.io/proxy-body-size: "50m"
+    # TLS 를 붙일 경우 주석 해제
+    # cert-manager.io/cluster-issuer: letsencrypt-prod
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: erp.jeonsoomin.kro.kr
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: coredesk
+                port:
+                  number: 3000
+  # cert-manager 로 TLS 를 발급할 경우 주석 해제
+  # tls:
+  #   - hosts:
+  #       - erp.jeonsoomin.kro.kr
+  #     secretName: coredesk-tls

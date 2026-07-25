@@ -1,0 +1,93 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: coredesk
+  namespace: coredesk
+  labels:
+    app: coredesk
+spec:
+  replicas: 1
+  # 업로드 PVC 가 ReadWriteOnce 라 롤링 업데이트 시 다중 마운트로 멈춘다.
+  # 새 파드를 띄우기 전에 기존 파드를 먼저 종료한다.
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: coredesk
+  template:
+    metadata:
+      labels:
+        app: coredesk
+    spec:
+      imagePullSecrets:
+        - name: ghcr-pull
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        # 마운트된 PVC 를 node(1000) 사용자가 쓸 수 있게 한다.
+        fsGroup: 1000
+      initContainers:
+        # 앱 기동 전에 Prisma 마이그레이션을 적용한다.
+        - name: migrate
+          image: ghcr.io/jeonsumin/coredesk:latest
+          # :latest 를 그대로 쓸 수 있도록 Always 로 둔다. IfNotPresent 면 노드에
+          # 캐시된 예전 :latest 가 그대로 떠서 배포가 안 된 것처럼 보인다.
+          imagePullPolicy: Always
+          command: ["npx", "prisma", "migrate", "deploy"]
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: coredesk-secrets
+                  key: DATABASE_URL
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              memory: 512Mi
+      containers:
+        - name: app
+          image: ghcr.io/jeonsumin/coredesk:latest
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 3000
+          envFrom:
+            - configMapRef:
+                name: coredesk-config
+            - secretRef:
+                name: coredesk-secrets
+          startupProbe:
+            httpGet:
+              path: /api/health
+              port: http
+            periodSeconds: 5
+            failureThreshold: 30
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: http
+            periodSeconds: 20
+            timeoutSeconds: 3
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: 200m
+              memory: 512Mi
+            limits:
+              memory: 1536Mi
+          volumeMounts:
+            - name: uploads
+              mountPath: /app/uploads
+      volumes:
+        - name: uploads
+          persistentVolumeClaim:
+            claimName: coredesk-uploads
