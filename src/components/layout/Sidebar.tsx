@@ -5,7 +5,8 @@ import { usePathname } from 'next/navigation'
 import { navItems } from '@/config/nav'
 import { cn } from '@/lib/utils'
 
-export function Sidebar() {
+// role은 Task 4에서 메뉴 필터링에 사용
+export function Sidebar(_props: { role: string }) {
   const pathname = usePathname()
 
   return (

@@ -3,9 +3,7 @@ import { NextResponse } from 'next/server'
 
 export default auth((req) => {
   const isAuthenticated = !!req.auth
-  const isAuthPage =
-    req.nextUrl.pathname.startsWith('/login') ||
-    req.nextUrl.pathname.startsWith('/register')
+  const isAuthPage = req.nextUrl.pathname.startsWith('/login')
 
   const isPublicPage = req.nextUrl.pathname.startsWith('/portfolio/')
 
