@@ -25,3 +25,6 @@ test('비활성 ADMIN 재활성화는 개수와 무관하게 허용', () =>
   assert.deepEqual(canChangeUser('a1', { ...admin, id: 'a2', isActive: false }, { isActive: true }, 1), { ok: true }))
 test('자기 이름만 바꾸는 패치(빈 patch) 허용', () =>
   assert.deepEqual(canChangeUser('a1', admin, {}, 1), { ok: true }))
+test('자기 역할을 ADMIN이 아닌 값으로 변경하려 하면 거부 (MEMBER→MANAGER)', () =>
+  assert.deepEqual(canChangeUser('m1', member, { role: 'MANAGER' }, 1),
+    { ok: false, error: '자기 자신의 관리자 권한은 해제할 수 없습니다' }))

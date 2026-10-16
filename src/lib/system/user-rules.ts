@@ -17,8 +17,8 @@ export function canChangeUser(
     return { ok: false, error: '자기 자신은 비활성화할 수 없습니다' }
   }
 
-  // Rule 2: Can't demote yourself from ADMIN
-  if (isSelf && patch.role !== undefined && patch.role !== 'ADMIN' && target.role === 'ADMIN') {
+  // Rule 2: Can't change yourself to non-ADMIN role
+  if (isSelf && patch.role !== undefined && patch.role !== 'ADMIN') {
     return { ok: false, error: '자기 자신의 관리자 권한은 해제할 수 없습니다' }
   }
 
