@@ -1,0 +1,92 @@
+# 클러스터 안에서 MySQL 을 직접 운영할 때만 적용한다.
+# 외부 관리형 DB 를 쓰면 이 파일은 무시하고 coredesk-secrets 의 DATABASE_URL 만 맞추면 된다.
+#
+# 사전에 DB 비밀번호 시크릿을 만들어야 한다:
+#   kubectl -n coredesk create secret generic coredesk-mysql-secrets \
+#     --from-literal=MYSQL_ROOT_PASSWORD='replace-with-strong-root-password' \
+#     --from-literal=MYSQL_PASSWORD='replace-with-strong-database-password'
+apiVersion: v1
+kind: Service
+metadata:
+  name: coredesk-mysql
+  namespace: coredesk
+  labels:
+    app: coredesk-mysql
+spec:
+  clusterIP: None
+  selector:
+    app: coredesk-mysql
+  ports:
+    - name: mysql
+      port: 3306
+      targetPort: 3306
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: coredesk-mysql
+  namespace: coredesk
+spec:
+  serviceName: coredesk-mysql
+  replicas: 1
+  selector:
+    matchLabels:
+      app: coredesk-mysql
+  template:
+    metadata:
+      labels:
+        app: coredesk-mysql
+    spec:
+      securityContext:
+        fsGroup: 999
+      containers:
+        - name: mysql
+          image: mysql:8.4
+          args:
+            - --character-set-server=utf8mb4
+            - --collation-server=utf8mb4_unicode_ci
+          ports:
+            - name: mysql
+              containerPort: 3306
+          env:
+            - name: MYSQL_DATABASE
+              value: coredesk
+            - name: MYSQL_USER
+              value: coredesk
+            - name: MYSQL_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: coredesk-mysql-secrets
+                  key: MYSQL_ROOT_PASSWORD
+            - name: MYSQL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: coredesk-mysql-secrets
+                  key: MYSQL_PASSWORD
+          readinessProbe:
+            exec:
+              command:
+                - sh
+                - -c
+                - mysqladmin ping -h 127.0.0.1 -u root -p"$MYSQL_ROOT_PASSWORD"
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            timeoutSeconds: 5
+          resources:
+            requests:
+              cpu: 200m
+              memory: 512Mi
+            limits:
+              memory: 2Gi
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/mysql
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 20Gi
