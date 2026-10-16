@@ -1,0 +1,42 @@
+# 개발용: docker compose up -d → http://localhost:3000
+services:
+  db:
+    image: mysql:8.4
+    environment:
+      MYSQL_DATABASE: coredesk
+      MYSQL_USER: coredesk
+      MYSQL_PASSWORD: coredesk
+      MYSQL_ROOT_PASSWORD: coredesk
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-ucoredesk", "-pcoredesk"]
+      interval: 5s
+      retries: 20
+
+  app:
+    image: node:22
+    working_dir: /app
+    # ponytail: migrations/ 는 PostgreSQL SQL이라 MySQL에선 migrate deploy 불가 → db push
+    command: sh -c "npm install && npx prisma db push --skip-generate && npx prisma generate && npm run dev -- -H 0.0.0.0"
+    env_file: .env
+    environment:
+      DATABASE_URL: mysql://coredesk:coredesk@db:3306/coredesk
+      NEXTAUTH_URL: http://localhost:3000
+      WATCHPACK_POLLING: "true"
+    ports:
+      - "3000:3000"
+    volumes:
+      - .:/app
+      - node_modules:/app/node_modules # 호스트(macOS) 네이티브 바이너리(sharp, prisma)와 분리
+      - next_cache:/app/.next
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  mysql_data:
+  node_modules:
+  next_cache:
