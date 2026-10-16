@@ -2,78 +2,96 @@
 
 import { revalidatePath } from 'next/cache'
 import { prisma } from '@/lib/prisma'
-import { auth } from '@/lib/auth'
+import { getCurrentDbUser } from '@/lib/admin'
+import { canManageProject, type ProjectMemberRole } from '@/lib/project-access'
 
-export async function inviteMember(projectId: string, formData: FormData) {
-  const session = await auth()
-  if (!session?.user?.id) throw new Error('Unauthorized')
+type ActionResult = { ok: true } | { error: string }
 
-  const email = formData.get('email') as string
-  const role = (formData.get('role') as string) || 'DEVELOPER'
+async function assertCanManage(
+  projectId: string,
+): Promise<{ error: string } | { ownerId: string; requesterId: string }> {
+  const user = await getCurrentDbUser()
+  if (!user) return { error: '권한이 없습니다' }
 
-  if (!email) return { error: '이메일을 입력해주세요' }
-
-  const member = await prisma.projectMember.findFirst({
-    where: { projectId, userId: session.user.id, role: 'PM' },
+  const project = await prisma.project.findUnique({
+    where: { id: projectId },
+    select: { ownerId: true },
   })
-  if (!member) return { error: '멤버 초대 권한이 없습니다' }
+  if (!project) return { error: '프로젝트를 찾을 수 없습니다' }
 
-  const targetUser = await prisma.user.findUnique({ where: { email } })
-  if (!targetUser) return { error: '해당 이메일로 가입된 사용자가 없습니다' }
+  const member = await prisma.projectMember.findUnique({
+    where: { projectId_userId: { projectId, userId: user.id } },
+    select: { role: true },
+  })
+
+  const allowed = canManageProject({
+    userRole: user.role,
+    isOwner: project.ownerId === user.id,
+    memberRole: member?.role ?? null,
+  })
+  if (!allowed) return { error: '권한이 없습니다' }
+
+  return { ownerId: project.ownerId, requesterId: user.id }
+}
+
+function revalidate(projectId: string) {
+  revalidatePath(`/projects/${projectId}`)
+  revalidatePath(`/projects/${projectId}/settings`)
+}
+
+export async function inviteMember(
+  projectId: string,
+  userId: string,
+  role: ProjectMemberRole,
+): Promise<ActionResult> {
+  const access = await assertCanManage(projectId)
+  if ('error' in access) return access
+
+  const target = await prisma.user.findUnique({ where: { id: userId } })
+  if (!target || !target.isActive) return { error: '초대할 수 없는 사용자입니다' }
 
   const existing = await prisma.projectMember.findUnique({
-    where: { projectId_userId: { projectId, userId: targetUser.id } },
+    where: { projectId_userId: { projectId, userId } },
   })
   if (existing) return { error: '이미 프로젝트 멤버입니다' }
 
-  await prisma.projectMember.create({
-    data: {
-      projectId,
-      userId: targetUser.id,
-      role: role as 'PM' | 'DEVELOPER' | 'VIEWER',
-    },
-  })
+  await prisma.projectMember.create({ data: { projectId, userId, role } })
 
-  revalidatePath(`/projects/${projectId}/settings`)
+  revalidate(projectId)
   return { ok: true }
 }
 
 export async function updateMemberRole(
   projectId: string,
   userId: string,
-  role: 'PM' | 'DEVELOPER' | 'VIEWER',
-) {
-  const session = await auth()
-  if (!session?.user?.id) throw new Error('Unauthorized')
+  role: ProjectMemberRole,
+): Promise<ActionResult> {
+  const access = await assertCanManage(projectId)
+  if ('error' in access) return access
 
-  const requester = await prisma.projectMember.findFirst({
-    where: { projectId, userId: session.user.id, role: 'PM' },
-  })
-  if (!requester) return { error: '권한이 없습니다' }
+  if (userId === access.ownerId)
+    return { error: '프로젝트 오너의 역할은 변경할 수 없습니다' }
 
   await prisma.projectMember.update({
     where: { projectId_userId: { projectId, userId } },
     data: { role },
   })
 
-  revalidatePath(`/projects/${projectId}/settings`)
+  revalidate(projectId)
   return { ok: true }
 }
 
-export async function removeMember(projectId: string, userId: string) {
-  const session = await auth()
-  if (!session?.user?.id) throw new Error('Unauthorized')
+export async function removeMember(
+  projectId: string,
+  userId: string,
+): Promise<ActionResult> {
+  const access = await assertCanManage(projectId)
+  if ('error' in access) return access
 
-  const project = await prisma.project.findUnique({ where: { id: projectId } })
-  if (!project) return { error: '프로젝트를 찾을 수 없습니다' }
-
-  const requester = await prisma.projectMember.findFirst({
-    where: { projectId, userId: session.user.id, role: 'PM' },
-  })
-  if (!requester) return { error: '권한이 없습니다' }
-
-  if (userId === project.ownerId)
+  if (userId === access.ownerId)
     return { error: '프로젝트 오너는 제거할 수 없습니다' }
+  if (userId === access.requesterId)
+    return { error: '자기 자신은 제거할 수 없습니다' }
 
   // 해당 멤버에게 배정된 태스크를 미배정 처리
   await prisma.task.updateMany({
@@ -85,6 +103,6 @@ export async function removeMember(projectId: string, userId: string) {
     where: { projectId_userId: { projectId, userId } },
   })
 
-  revalidatePath(`/projects/${projectId}/settings`)
+  revalidate(projectId)
   return { ok: true }
 }
