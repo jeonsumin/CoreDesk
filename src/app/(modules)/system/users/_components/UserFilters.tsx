@@ -24,13 +24,20 @@ export function UserFilters() {
 
   return (
     <div className="flex gap-2">
-      <Input
-        key={searchParams.get('q') ?? ''}
-        defaultValue={searchParams.get('q') ?? ''}
-        placeholder="이름 또는 이메일 검색"
-        className="max-w-xs"
-        onChange={(e) => update('q', e.target.value.trim())}
-      />
+      <form
+        onSubmit={(e) => {
+          e.preventDefault()
+          const q = new FormData(e.currentTarget).get('q')
+          update('q', typeof q === 'string' ? q.trim() : null)
+        }}
+      >
+        <Input
+          name="q"
+          defaultValue={searchParams.get('q') ?? ''}
+          placeholder="이름 또는 이메일 검색 (Enter)"
+          className="w-64"
+        />
+      </form>
       <Select value={status} onValueChange={(v) => update('status', v)}>
         <SelectTrigger className="w-32">
           <SelectValue placeholder="상태" />

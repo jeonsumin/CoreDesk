@@ -61,7 +61,12 @@ export function UserFormDialog(props: Props) {
   const onOpenChange = (next: boolean) => {
     setOpen(next)
     if (next) {
-      reset()
+      reset({
+        name: user?.name ?? '',
+        email: user?.email ?? '',
+        role: user?.role ?? 'MEMBER',
+        password: '',
+      })
       setError(null)
     }
   }
