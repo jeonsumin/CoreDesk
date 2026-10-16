@@ -35,9 +35,13 @@ export default async function TasksPage({ params, searchParams }: Props) {
   const project = await prisma.project.findUnique({
     where: { id },
     include: {
-      members: { include: { user: true } },
+      members: {
+        include: {
+          user: { select: { id: true, name: true, email: true, isActive: true } },
+        },
+      },
       tasks: {
-        include: { assignee: true },
+        include: { assignee: { select: { id: true, name: true, email: true } } },
         orderBy: [{ priority: 'asc' }, { dueDate: 'asc' }],
       },
     },
@@ -48,7 +52,9 @@ export default async function TasksPage({ params, searchParams }: Props) {
   const isMember = project.members.some((m) => m.userId === session.user.id)
   if (!isMember) notFound()
 
-  const members = project.members.map((m) => m.user)
+  const members = project.members
+    .map((m) => m.user)
+    .filter((u) => u.isActive)
   const validStatus = statusOrder.includes(status as TaskStatus)
     ? (status as TaskStatus)
     : null

@@ -17,8 +17,8 @@ import type { Task, User, TaskStatus } from '@/types'
 
 type TaskFormProps = {
   projectId: string
-  task?: Task
-  members: User[]
+  task?: Task & { assignee?: Pick<User, 'name'> | null }
+  members: Pick<User, 'id' | 'name'>[]
   onSuccess?: () => void
   defaultStatus?: TaskStatus
 }
@@ -106,6 +106,11 @@ export function TaskForm({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="">미배정</SelectItem>
+              {task?.assigneeId && !members.some((m) => m.id === task.assigneeId) && (
+                <SelectItem value={task.assigneeId}>
+                  {task.assignee?.name ?? '알 수 없음'} (비활성)
+                </SelectItem>
+              )}
               {members.map((m) => (
                 <SelectItem key={m.id} value={m.id}>
                   {m.name}

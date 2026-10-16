@@ -25,6 +25,11 @@ openssl rand -base64 32
 
 ## 2. 서버 실행
 
+> **릴리스 노트 (시스템관리 1단계 배포 전 필수):** 이 버전은 `User.isActive` 컬럼과 `Role` enum 변경을 포함한다.
+> 그러나 `prisma/migrations/`는 PostgreSQL SQL이라 MySQL provider와 맞지 않고 해당 변경 마이그레이션도 없어서,
+> `prisma migrate deploy`로는 스키마가 반영되지 않는다. 배포 전에 대상 DB에 대해 먼저 `npx prisma db push`를 실행해야 한다.
+> 실행하지 않으면 로그인 시 알 수 없는 컬럼(`isActive`) 오류로 로그인이 실패한다.
+
 ```bash
 docker compose up -d --build
 ```

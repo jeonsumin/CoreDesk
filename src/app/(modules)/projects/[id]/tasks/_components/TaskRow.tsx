@@ -31,9 +31,9 @@ const priorityLabel: Record<Priority, string> = {
 }
 
 type TaskRowProps = {
-  task: Task & { assignee: User | null }
+  task: Task & { assignee: Pick<User, 'id' | 'name' | 'email'> | null }
   projectId: string
-  members: User[]
+  members: Pick<User, 'id' | 'name'>[]
 }
 
 function DdayBadge({ dueDate }: { dueDate: Date | null }) {

@@ -25,7 +25,9 @@ import { TaskForm } from './TaskForm'
 import { deleteTask } from '../_actions/task'
 import type { Task, User, Priority } from '@/types'
 
-type TaskWithAssignee = Task & { assignee: User | null }
+type TaskWithAssignee = Task & {
+  assignee: Pick<User, 'id' | 'name' | 'email'> | null
+}
 
 const priorityConfig: Record<
   Priority,
@@ -58,7 +60,7 @@ const dueClassName = {
 type Props = {
   task: KanbanTaskModel<TaskWithAssignee>
   projectId: string
-  members: User[]
+  members: Pick<User, 'id' | 'name'>[]
   canManageTasks: boolean
   canDrag: boolean
   onDragStart: (taskId: string) => void

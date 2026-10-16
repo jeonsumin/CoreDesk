@@ -16,7 +16,13 @@ export default async function ProjectSettingsPage({ params }: Props) {
 
   const project = await prisma.project.findUnique({
     where: { id },
-    include: { members: { include: { user: true } } },
+    include: {
+      members: {
+        include: {
+          user: { select: { id: true, name: true, email: true, isActive: true } },
+        },
+      },
+    },
   })
 
   if (!project) notFound()
@@ -25,7 +31,7 @@ export default async function ProjectSettingsPage({ params }: Props) {
     (m) => m.userId === session.user.id,
   )
   const dbUser = await getCurrentDbUser()
-  if (!dbUser) redirect('/login')
+  if (!dbUser) redirect('/api/logout')
   const isAdmin = dbUser.role === 'ADMIN'
   if (!currentMember && !isAdmin) notFound()
 

@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
-import { auth } from '@/lib/auth'
+import { getCurrentDbUser } from '@/lib/admin'
 import {
   canManageProjectInfo,
   encryptProjectInfoPassword,
@@ -36,8 +36,8 @@ function encryptParsedPassword<T extends { password?: string }>(data: T): T {
 }
 
 async function authorizeProjectInfoManager(projectId: string) {
-  const session = await auth()
-  if (!session?.user?.id) return { ok: false, error: '로그인이 필요합니다' }
+  const dbUser = await getCurrentDbUser()
+  if (!dbUser) return { ok: false, error: '로그인이 필요합니다' }
 
   const project = await prisma.project.findUnique({
     where: { id: projectId },
@@ -50,8 +50,8 @@ async function authorizeProjectInfoManager(projectId: string) {
   if (!project) return { ok: false, error: '프로젝트를 찾을 수 없습니다' }
 
   const canManage = canManageProjectInfo(project, {
-    id: session.user.id,
-    role: session.user.role,
+    id: dbUser.id,
+    role: dbUser.role,
   })
 
   if (!canManage) return { ok: false, error: '권한이 없습니다' }

@@ -36,10 +36,14 @@ export default async function ProjectDetailPage({ params, searchParams }: Props)
   const project = await prisma.project.findUnique({
     where: { id },
     include: {
-      owner: true,
-      members: { include: { user: true } },
+      owner: { select: { id: true, name: true, email: true } },
+      members: {
+        include: {
+          user: { select: { id: true, name: true, email: true, isActive: true } },
+        },
+      },
       tasks: {
-        include: { assignee: true },
+        include: { assignee: { select: { id: true, name: true, email: true } } },
         orderBy: [{ priority: 'asc' }, { dueDate: 'asc' }],
       },
       milestones: { orderBy: { dueDate: 'asc' } },
@@ -56,7 +60,7 @@ export default async function ProjectDetailPage({ params, searchParams }: Props)
 
   const sessionUser = session.user
   const dbUser = await getCurrentDbUser()
-  if (!dbUser) redirect('/login')
+  if (!dbUser) redirect('/api/logout')
   const currentMember = project.members.find((m) => m.userId === sessionUser.id)
   const isAdmin = dbUser.role === 'ADMIN'
   if (!currentMember && !isAdmin) notFound()
@@ -87,7 +91,8 @@ export default async function ProjectDetailPage({ params, searchParams }: Props)
   ]
 
   const activeTab = tab && tabs.some((t) => t.key === tab) ? tab : 'tasks'
-  const members = project.members.filter((m) => m.user.isActive).map((m) => m.user)
+  const members = project.members.map((m) => m.user)
+  const assignableMembers = members.filter((u) => u.isActive)
   const candidates =
     activeTab === 'members' && canManage
       ? await prisma.user.findMany({
@@ -178,6 +183,7 @@ export default async function ProjectDetailPage({ params, searchParams }: Props)
             initialTasks={project.tasks}
             projectId={id}
             members={members}
+            assignableMembers={assignableMembers}
             canManageTasks={canManage}
             canUpdateTasks={canUpdateTasks}
           />

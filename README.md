@@ -65,7 +65,7 @@ docker compose up -d db
 ### 4. Prisma 마이그레이션 및 시드
 
 ```bash
-npx prisma migrate dev
+npx prisma db push
 npm run db:seed
 ```
 

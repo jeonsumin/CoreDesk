@@ -16,7 +16,9 @@ import { inviteMember, removeMember, updateMemberRole } from '../_actions/member
 import { isProjectMemberRole, type ProjectMemberRole } from '@/lib/project-access'
 import type { ProjectMember, User } from '@/types'
 
-type MemberWithUser = ProjectMember & { user: User }
+type MemberWithUser = ProjectMember & {
+  user: Pick<User, 'id' | 'name' | 'email' | 'isActive'>
+}
 
 type MemberListProps = {
   projectId: string

@@ -43,12 +43,15 @@ import { TaskForm } from './TaskForm'
 import { updateTaskStatus } from '../_actions/task'
 import type { Task, User } from '@/types'
 
-type TaskWithAssignee = Task & { assignee: User | null }
+type TaskWithAssignee = Task & {
+  assignee: Pick<User, 'id' | 'name' | 'email'> | null
+}
 
 type Props = {
   initialTasks: TaskWithAssignee[]
   projectId: string
-  members: User[]
+  members: Pick<User, 'id' | 'name'>[]
+  assignableMembers: Pick<User, 'id' | 'name'>[]
   canManageTasks?: boolean
   canUpdateTasks?: boolean
 }
@@ -57,6 +60,7 @@ export function KanbanBoard({
   initialTasks,
   projectId,
   members,
+  assignableMembers,
   canManageTasks = true,
   canUpdateTasks = true,
 }: Props) {
@@ -201,7 +205,7 @@ export function KanbanBoard({
                   <DialogHeader>
                     <DialogTitle>새 태스크</DialogTitle>
                   </DialogHeader>
-                  <TaskForm projectId={projectId} members={members} />
+                  <TaskForm projectId={projectId} members={assignableMembers} />
                 </DialogContent>
               </Dialog>
             )}
@@ -300,7 +304,7 @@ export function KanbanBoard({
                   <DialogHeader>
                     <DialogTitle>새 태스크</DialogTitle>
                   </DialogHeader>
-                  <TaskForm projectId={projectId} members={members} />
+                  <TaskForm projectId={projectId} members={assignableMembers} />
                 </DialogContent>
               </Dialog>
             )}
@@ -383,7 +387,7 @@ export function KanbanBoard({
                           key={task.id}
                           task={task}
                           projectId={projectId}
-                          members={members}
+                          members={assignableMembers}
                           canManageTasks={canManageTasks}
                           canDrag={canUpdateTasks}
                           onDragStart={setDraggedId}
@@ -413,7 +417,7 @@ export function KanbanBoard({
                           </DialogHeader>
                           <TaskForm
                             projectId={projectId}
-                            members={members}
+                            members={assignableMembers}
                             defaultStatus={status}
                           />
                         </DialogContent>
