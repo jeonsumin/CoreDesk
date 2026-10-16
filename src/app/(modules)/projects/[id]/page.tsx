@@ -2,6 +2,8 @@ import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { getCurrentDbUser } from '@/lib/admin'
+import { canManageProject } from '@/lib/project-access'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -53,13 +55,18 @@ export default async function ProjectDetailPage({ params, searchParams }: Props)
   if (!project) notFound()
 
   const sessionUser = session.user
+  const dbUser = await getCurrentDbUser()
+  if (!dbUser) redirect('/login')
   const currentMember = project.members.find((m) => m.userId === sessionUser.id)
-  const isAdmin = sessionUser.role === 'ADMIN'
+  const isAdmin = dbUser.role === 'ADMIN'
   if (!currentMember && !isAdmin) notFound()
 
   const isOwner = project.ownerId === sessionUser.id
-  const isPM = currentMember?.role === 'PM'
-  const canManage = isAdmin || isOwner || isPM
+  const canManage = canManageProject({
+    userRole: dbUser.role,
+    isOwner,
+    memberRole: currentMember?.role,
+  })
   const canUpdateTasks =
     isAdmin ||
     isOwner ||
@@ -80,7 +87,15 @@ export default async function ProjectDetailPage({ params, searchParams }: Props)
   ]
 
   const activeTab = tab && tabs.some((t) => t.key === tab) ? tab : 'tasks'
-  const members = project.members.map((m) => m.user)
+  const members = project.members.filter((m) => m.user.isActive).map((m) => m.user)
+  const candidates =
+    activeTab === 'members' && canManage
+      ? await prisma.user.findMany({
+          where: { isActive: true, projectMembers: { none: { projectId: id } } },
+          select: { id: true, name: true, email: true },
+          orderBy: { name: 'asc' },
+        })
+      : []
 
   return (
     <div className="flex flex-col gap-4 h-full">
@@ -188,9 +203,12 @@ export default async function ProjectDetailPage({ params, searchParams }: Props)
           <div className="max-w-2xl">
             <MemberList
               projectId={id}
+              ownerId={project.ownerId}
               members={project.members}
+              candidates={candidates}
               currentUserId={session.user.id}
-              isOwner={isOwner}
+              canManage={canManage}
+              isAdmin={isAdmin}
             />
           </div>
         )}

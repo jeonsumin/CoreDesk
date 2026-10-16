@@ -1,6 +1,8 @@
 import { notFound, redirect } from 'next/navigation'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { getCurrentDbUser } from '@/lib/admin'
+import { canManageProject } from '@/lib/project-access'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { MemberList } from '../../_components/MemberList'
 import { ProjectForm } from '../../_components/ProjectForm'
@@ -22,10 +24,23 @@ export default async function ProjectSettingsPage({ params }: Props) {
   const currentMember = project.members.find(
     (m) => m.userId === session.user.id,
   )
-  if (!currentMember) notFound()
+  const dbUser = await getCurrentDbUser()
+  if (!dbUser) redirect('/login')
+  const isAdmin = dbUser.role === 'ADMIN'
+  if (!currentMember && !isAdmin) notFound()
 
-  const isOwner = project.ownerId === session.user.id
-  const isPM = currentMember.role === 'PM'
+  const canManage = canManageProject({
+    userRole: dbUser.role,
+    isOwner: project.ownerId === session.user.id,
+    memberRole: currentMember?.role,
+  })
+  const candidates = canManage
+    ? await prisma.user.findMany({
+        where: { isActive: true, projectMembers: { none: { projectId: id } } },
+        select: { id: true, name: true, email: true },
+        orderBy: { name: 'asc' },
+      })
+    : []
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
@@ -34,7 +49,7 @@ export default async function ProjectSettingsPage({ params }: Props) {
         <p className="text-muted-foreground">{project.name}</p>
       </div>
 
-      {(isOwner || isPM) && (
+      {canManage && (
         <Card>
           <CardHeader>
             <CardTitle>기본 정보 수정</CardTitle>
@@ -52,9 +67,12 @@ export default async function ProjectSettingsPage({ params }: Props) {
         <CardContent>
           <MemberList
             projectId={id}
+            ownerId={project.ownerId}
             members={project.members}
+            candidates={candidates}
             currentUserId={session.user.id}
-            isOwner={isOwner || isPM}
+            canManage={canManage}
+            isAdmin={isAdmin}
           />
         </CardContent>
       </Card>
