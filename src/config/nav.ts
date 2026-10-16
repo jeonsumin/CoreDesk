@@ -4,6 +4,8 @@ import {
   HardDrive,
   BriefcaseBusiness,
   NotepadText,
+  Settings,
+  Users,
   type LucideIcon,
 } from 'lucide-react'
 
@@ -13,6 +15,8 @@ export type NavItem = {
   icon: LucideIcon
   phase: number
   disabled?: boolean
+  adminOnly?: boolean
+  children?: NavItem[]
 }
 
 export const navItems: NavItem[] = [
@@ -26,4 +30,14 @@ export const navItems: NavItem[] = [
   },
   { title: '메모', href: '/memos', icon: NotepadText, phase: 1 },
   { title: '드라이브', href: '/drive', icon: HardDrive, phase: 1 },
+  {
+    title: '시스템관리',
+    href: '/system',
+    icon: Settings,
+    phase: 1,
+    adminOnly: true,
+    children: [
+      { title: '사용자관리', href: '/system/users', icon: Users, phase: 1 },
+    ],
+  },
 ]
