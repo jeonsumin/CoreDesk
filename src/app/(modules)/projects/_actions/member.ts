@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { getCurrentDbUser } from '@/lib/admin'
-import { canManageProject, type ProjectMemberRole } from '@/lib/project-access'
+import { canManageProject, isProjectMemberRole, type ProjectMemberRole } from '@/lib/project-access'
 
 type ActionResult = { ok: true } | { error: string }
 
@@ -34,6 +34,14 @@ async function assertCanManage(
   return { ownerId: project.ownerId, requesterId: user.id }
 }
 
+async function isMember(projectId: string, userId: string): Promise<boolean> {
+  const m = await prisma.projectMember.findUnique({
+    where: { projectId_userId: { projectId, userId } },
+    select: { userId: true },
+  })
+  return m !== null
+}
+
 function revalidate(projectId: string) {
   revalidatePath(`/projects/${projectId}`)
   revalidatePath(`/projects/${projectId}/settings`)
@@ -44,6 +52,7 @@ export async function inviteMember(
   userId: string,
   role: ProjectMemberRole,
 ): Promise<ActionResult> {
+  if (!isProjectMemberRole(role)) return { error: '올바르지 않은 역할입니다' }
   const access = await assertCanManage(projectId)
   if ('error' in access) return access
 
@@ -66,11 +75,13 @@ export async function updateMemberRole(
   userId: string,
   role: ProjectMemberRole,
 ): Promise<ActionResult> {
+  if (!isProjectMemberRole(role)) return { error: '올바르지 않은 역할입니다' }
   const access = await assertCanManage(projectId)
   if ('error' in access) return access
 
   if (userId === access.ownerId)
     return { error: '프로젝트 오너의 역할은 변경할 수 없습니다' }
+  if (!(await isMember(projectId, userId))) return { error: '프로젝트 멤버가 아닙니다' }
 
   await prisma.projectMember.update({
     where: { projectId_userId: { projectId, userId } },
@@ -92,6 +103,7 @@ export async function removeMember(
     return { error: '프로젝트 오너는 제거할 수 없습니다' }
   if (userId === access.requesterId)
     return { error: '자기 자신은 제거할 수 없습니다' }
+  if (!(await isMember(projectId, userId))) return { error: '프로젝트 멤버가 아닙니다' }
 
   // 해당 멤버에게 배정된 태스크를 미배정 처리
   await prisma.task.updateMany({

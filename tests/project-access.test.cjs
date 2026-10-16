@@ -1,7 +1,7 @@
 require('./_ts.cjs')
 const test = require('node:test')
 const assert = require('node:assert/strict')
-const { canManageProject } = require('../src/lib/project-access.ts')
+const { canManageProject, isProjectMemberRole } = require('../src/lib/project-access.ts')
 
 test('ADMIN은 비멤버여도 허용', () => assert.equal(canManageProject({ userRole: 'ADMIN', isOwner: false, memberRole: null }), true))
 test('오너는 PM이 아니어도 허용', () => assert.equal(canManageProject({ userRole: 'MEMBER', isOwner: true, memberRole: 'DEVELOPER' }), true))
@@ -9,3 +9,8 @@ test('PM 허용', () => assert.equal(canManageProject({ userRole: 'MEMBER', isOw
 test('DEVELOPER 거부', () => assert.equal(canManageProject({ userRole: 'MANAGER', isOwner: false, memberRole: 'DEVELOPER' }), false))
 test('VIEWER 거부', () => assert.equal(canManageProject({ userRole: 'MEMBER', isOwner: false, memberRole: 'VIEWER' }), false))
 test('비멤버 거부', () => assert.equal(canManageProject({ userRole: 'MEMBER', isOwner: false }), false))
+test('isProjectMemberRole: 허용 값만 통과', () => {
+  assert.equal(isProjectMemberRole('PM'), true)
+  assert.equal(isProjectMemberRole('ADMIN'), false)
+  assert.equal(isProjectMemberRole(undefined), false)
+})
