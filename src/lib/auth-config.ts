@@ -42,7 +42,7 @@ export const authConfig = {
     // GoogleProvider({ clientId: process.env.GOOGLE_CLIENT_ID!, clientSecret: process.env.GOOGLE_CLIENT_SECRET! }),
     // MicrosoftEntraIDProvider({ clientId: process.env.MS_CLIENT_ID!, clientSecret: process.env.MS_CLIENT_SECRET!, tenantId: process.env.MS_TENANT_ID! }),
   ],
-  session: { strategy: 'jwt' },
+  session: { strategy: 'jwt', maxAge: 60 * 60 }, // 1시간
   callbacks: {
     jwt({ token, user }) {
       if (user) {
