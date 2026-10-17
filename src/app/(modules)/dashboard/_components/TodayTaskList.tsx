@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { ChevronDown, ChevronsUp, Circle, CircleCheck, CircleDot, Equal, Eye, type LucideIcon } from 'lucide-react'
+import { ChevronDown, ChevronsUp, Circle, CircleCheck, CircleDot, Equal, type LucideIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { projectColor } from '@/lib/projects/appearance'
 import type { Task, Project, Priority, TaskStatus } from '@/types'
@@ -16,7 +16,6 @@ type Props = {
 const statusIcon: Record<TaskStatus, { label: string; icon: LucideIcon; className: string }> = {
   TODO: { label: '할 일', icon: Circle, className: 'text-muted-foreground' },
   IN_PROGRESS: { label: '진행 중', icon: CircleDot, className: 'text-blue-600' },
-  REVIEW: { label: '검토', icon: Eye, className: 'text-orange-500' },
   DONE: { label: '완료', icon: CircleCheck, className: 'text-green-500' },
 }
 
@@ -44,7 +43,7 @@ export function TodayTaskList({ tasks, title, nowMs }: Props) {
         return (
           <Link
             key={task.id}
-            href={`/projects/${task.projectId}/tasks`}
+            href={`/projects/${task.projectId}?tab=board`}
             className="flex min-h-14 items-center gap-3 border-b px-4 py-2 transition-colors hover:bg-muted/50"
           >
             <StatusIcon

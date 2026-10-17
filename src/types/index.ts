@@ -2,7 +2,7 @@ import type {
   User,
   Project,
   Task,
-  Milestone,
+  TaskAssignee,
   ProjectMember,
   DriveFile,
   DriveFolder,
@@ -19,7 +19,7 @@ export type {
   User,
   Project,
   Task,
-  Milestone,
+  TaskAssignee,
   ProjectMember,
   DriveFile,
   DriveFolder,
@@ -37,6 +37,7 @@ export type {
   MemberRole,
   ProjectStatus,
   TaskStatus,
+  IssueType,
   Priority,
   PortfolioUriType,
 } from '@prisma/client'
@@ -45,11 +46,10 @@ export type ProjectWithDetails = Project & {
   owner: User
   members: (ProjectMember & { user: User })[]
   tasks: Task[]
-  milestones: Milestone[]
 }
 
 export type TaskWithDetails = Task & {
-  assignee: User | null
+  assignees: (TaskAssignee & { user: User })[]
   project: Project
 }
 

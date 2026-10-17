@@ -6,7 +6,6 @@ import {
   CircleCheck,
   CircleDot,
   Equal,
-  Eye,
   type LucideIcon,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -17,14 +16,12 @@ import { DdayBadge } from '@/components/task/DdayBadge'
 const statusMeta: Record<TaskStatus, { label: string; icon: LucideIcon; className: string }> = {
   TODO: { label: '할 일', icon: Circle, className: 'text-muted-foreground' },
   IN_PROGRESS: { label: '진행 중', icon: CircleDot, className: 'text-blue-600' },
-  REVIEW: { label: '검토', icon: Eye, className: 'text-orange-500' },
   DONE: { label: '완료', icon: CircleCheck, className: 'text-green-500' },
 }
 
 const statusBadgeClass: Record<TaskStatus, string> = {
   TODO: 'border-border bg-muted text-muted-foreground',
   IN_PROGRESS: 'border-blue-200 bg-blue-50 text-blue-700',
-  REVIEW: 'border-orange-200 bg-orange-50 text-orange-600',
   DONE: 'border-green-200 bg-green-50 text-green-700',
 }
 
@@ -56,7 +53,7 @@ export function MyTaskRow({
         <span className="truncate">{task.project.name}</span>
       </span>
       <Link
-        href={`/projects/${task.projectId}/tasks`}
+        href={`/projects/${task.projectId}?tab=board`}
         className="min-w-0 flex-1 truncate text-sm font-medium hover:underline"
       >
         {task.title}

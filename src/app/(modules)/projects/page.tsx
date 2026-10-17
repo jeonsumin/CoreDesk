@@ -35,7 +35,7 @@ export default async function ProjectsPage({ searchParams }: Props) {
       ...(statusFilter && { status: statusFilter }),
     },
     include: {
-      tasks: true,
+      tasks: { where: { type: { not: 'EPIC' } } },
       _count: { select: { members: true } },
     },
     orderBy: { updatedAt: 'desc' },

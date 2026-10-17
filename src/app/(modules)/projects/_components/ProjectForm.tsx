@@ -49,6 +49,18 @@ export function ProjectForm({ project, onSuccess }: ProjectFormProps) {
         />
       </div>
       <div className="space-y-2">
+        <Label htmlFor="key">프로젝트 키 *</Label>
+        <Input
+          id="key"
+          name="key"
+          defaultValue={project?.key ?? ''}
+          placeholder="예: BB-CIC-WEB"
+          className="uppercase"
+          required
+        />
+        <p className="text-xs text-muted-foreground">이슈 키 앞에 붙습니다 (BB-CIC-WEB-6). 영문 대문자로 시작, 영문·숫자·하이픈 2~20자</p>
+      </div>
+      <div className="space-y-2">
         <Label htmlFor="description">설명</Label>
         <Textarea
           id="description"

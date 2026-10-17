@@ -105,10 +105,9 @@ export async function removeMember(
     return { error: '자기 자신은 제거할 수 없습니다' }
   if (!(await isMember(projectId, userId))) return { error: '프로젝트 멤버가 아닙니다' }
 
-  // 해당 멤버에게 배정된 태스크를 미배정 처리
-  await prisma.task.updateMany({
-    where: { projectId, assigneeId: userId },
-    data: { assigneeId: null },
+  // 해당 멤버를 이 프로젝트 이슈의 담당자에서 뺀다
+  await prisma.taskAssignee.deleteMany({
+    where: { userId, task: { projectId } },
   })
 
   await prisma.projectMember.delete({

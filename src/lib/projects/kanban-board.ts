@@ -4,7 +4,6 @@ const DUE_SOON_DAYS = 3
 export const KANBAN_STATUSES = [
   'TODO',
   'IN_PROGRESS',
-  'REVIEW',
   'DONE',
 ] as const
 
@@ -22,12 +21,6 @@ export const KANBAN_COLUMNS = [
     dotClassName: 'bg-blue-500',
   },
   {
-    status: 'REVIEW',
-    label: '검토',
-    description: '확인 필요',
-    dotClassName: 'bg-orange-500',
-  },
-  {
     status: 'DONE',
     label: '완료',
     description: '종료됨',
@@ -41,26 +34,26 @@ export type KanbanDueBucket = 'overdue' | 'dueSoon' | 'later' | 'none'
 export type KanbanDueFilter = 'all' | KanbanDueBucket
 export type KanbanPriorityFilter = 'all' | KanbanPriority
 export type KanbanAssigneeFilter = 'all' | 'unassigned' | string
+// 'all' | 'none'(에픽 미할당) | 에픽 id
+export type KanbanEpicFilter = 'all' | 'none' | string
 
 export type KanbanTaskInput = {
   id: string
   title: string
   description: string | null
+  type: 'EPIC' | 'STORY' | 'TASK'
+  epicId: string | null
   status: KanbanStatus
   priority: KanbanPriority
-  assigneeId: string | null
   dueDate: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
-  assignee?: {
-    id: string
-    name: string
-    email?: string
-  } | null
+  assignees: { id: string; name: string }[]
 }
 
 export type KanbanFilters = {
   query?: string
+  epic?: KanbanEpicFilter
   assigneeId?: KanbanAssigneeFilter
   priority?: KanbanPriorityFilter
   due?: KanbanDueFilter
@@ -93,8 +86,15 @@ export type KanbanColumnModel<TTask extends KanbanTaskInput = KanbanTaskInput> =
     dueSoonCount: number
   }
 
+export type KanbanEpicSummary<TTask extends KanbanTaskInput = KanbanTaskInput> = TTask & {
+  total: number
+  done: number
+  progress: number
+}
+
 export type KanbanBoardModel<TTask extends KanbanTaskInput = KanbanTaskInput> = {
   columns: KanbanColumnModel<TTask>[]
+  epics: KanbanEpicSummary<TTask>[]
   stats: {
     total: number
     visible: number
@@ -103,6 +103,7 @@ export type KanbanBoardModel<TTask extends KanbanTaskInput = KanbanTaskInput> = 
     overdue: number
     dueSoon: number
     unassigned: number
+    withoutEpic: number
   }
 }
 
@@ -117,10 +118,24 @@ const priorityRank: Record<KanbanPriority, number> = {
   LOW: 2,
 }
 
+// 에픽은 컬럼 카드가 아니라 좌측 에픽 패널 항목이 된다. 진행률·통계도 에픽을 뺀 이슈 기준
 export function buildKanbanBoardModel<TTask extends KanbanTaskInput>(
-  tasks: TTask[],
+  items: TTask[],
   options: BuildKanbanBoardOptions = {},
 ): KanbanBoardModel<TTask> {
+  const tasks = items.filter((item) => item.type !== 'EPIC')
+  const epics = items
+    .filter((item) => item.type === 'EPIC')
+    .map<KanbanEpicSummary<TTask>>((epic) => {
+      const children = tasks.filter((task) => task.epicId === epic.id)
+      const done = children.filter((task) => task.status === 'DONE').length
+      return {
+        ...epic,
+        total: children.length,
+        done,
+        progress: children.length === 0 ? 0 : Math.round((done / children.length) * 100),
+      }
+    })
   const today = options.today ?? new Date()
   const filters = normalizeFilters(options.filters)
   const decoratedTasks = tasks
@@ -160,6 +175,7 @@ export function buildKanbanBoardModel<TTask extends KanbanTaskInput>(
 
   return {
     columns,
+    epics,
     stats: {
       total: tasks.length,
       visible: visibleTasks.length,
@@ -172,7 +188,8 @@ export function buildKanbanBoardModel<TTask extends KanbanTaskInput>(
       dueSoon: activeVisibleTasks.filter(
         (task) => task.dueState.bucket === 'dueSoon',
       ).length,
-      unassigned: activeVisibleTasks.filter((task) => !task.assigneeId).length,
+      unassigned: activeVisibleTasks.filter((task) => task.assignees.length === 0).length,
+      withoutEpic: tasks.filter((task) => !task.epicId).length,
     },
   }
 }
@@ -209,6 +226,7 @@ export function getKanbanDueState(
 function normalizeFilters(filters: KanbanFilters = {}): Required<KanbanFilters> {
   return {
     query: filters.query?.trim().toLowerCase() ?? '',
+    epic: filters.epic || 'all',
     assigneeId: filters.assigneeId || 'all',
     priority: filters.priority || 'all',
     due: filters.due || 'all',
@@ -223,7 +241,7 @@ function matchesKanbanFilters(
     const searchable = [
       task.title,
       task.description ?? '',
-      task.assignee?.name ?? '',
+      ...task.assignees.map((assignee) => assignee.name),
     ]
       .join(' ')
       .toLowerCase()
@@ -231,11 +249,16 @@ function matchesKanbanFilters(
     if (!searchable.includes(filters.query)) return false
   }
 
-  if (filters.assigneeId === 'unassigned' && task.assigneeId) return false
+  if (filters.epic === 'none' && task.epicId) return false
+  if (filters.epic !== 'all' && filters.epic !== 'none' && task.epicId !== filters.epic) {
+    return false
+  }
+
+  if (filters.assigneeId === 'unassigned' && task.assignees.length > 0) return false
   if (
     filters.assigneeId !== 'all' &&
     filters.assigneeId !== 'unassigned' &&
-    task.assigneeId !== filters.assigneeId
+    !task.assignees.some((assignee) => assignee.id === filters.assigneeId)
   ) {
     return false
   }

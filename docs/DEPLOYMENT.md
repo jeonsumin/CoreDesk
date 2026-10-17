@@ -30,6 +30,14 @@ openssl rand -base64 32
 > `prisma migrate deploy`로는 스키마가 반영되지 않는다. 배포 전에 대상 DB에 대해 먼저 `npx prisma db push`를 실행해야 한다.
 > 실행하지 않으면 로그인 시 알 수 없는 컬럼(`isActive`) 오류로 로그인이 실패한다.
 
+> **릴리스 노트 (보드/타임라인 개편 배포 전 필수):** 에픽·이슈 키·다중 담당자 도입, 태스크 상태 `REVIEW` 제거, 마일스톤 제거가 포함된다.
+> 기존 데이터를 보존하려면 `prisma db push` 대신 아래 이관 스크립트를 대상 DB에 한 번 실행한다. 스크립트가 담당자를 보관 →
+> `db push --accept-data-loss` → 담당자 복원, `REVIEW`→`IN_PROGRESS`, 프로젝트 키·이슈 번호 생성까지 처리한다. **마일스톤 데이터는 삭제된다.**
+>
+> ```bash
+> DATABASE_URL=... npm run migrate:issue-board
+> ```
+
 ```bash
 docker compose up -d --build
 ```
