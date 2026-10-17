@@ -61,3 +61,16 @@ docker compose exec app npm run secrets:encrypt
 ## 5. 업로드 저장소
 
 업로드 파일은 컨테이너 내부 경로 `/app/uploads`에 Docker named volume `uploads_data`로 유지한다. 서버 이전이나 백업 시 `postgres_data`와 `uploads_data`를 함께 백업해야 한다.
+
+## 6. 시스템관리 2단계 (메뉴관리·권한관리) 배포
+
+사이드바가 DB 메뉴 기반으로 바뀌었으므로 배포 시 대상 DB에 대해 아래 순서로 실행한다.
+
+```bash
+npx prisma db push      # Menu, MenuPermission 테이블 반영
+npm run menus:seed      # 기본 메뉴와 권한 시드
+```
+
+- `menus:seed`는 멱등이며 데모 사용자를 만들지 않는다. (`db:seed`도 메뉴를 시드하지만 데모 사용자까지 만들므로 운영에는 쓰지 않는다.)
+- 시드 전에 배포하면 사이드바가 비어 보인다. 페이지는 그대로 열리므로, 시드를 실행하면 바로 복구된다.
+- `src/middleware.ts`는 `src/proxy.ts`로 대체되었다(Next 16, Node 런타임). 요청마다 비활성 사용자와 숨김 처리된 메뉴 경로를 차단한다.
