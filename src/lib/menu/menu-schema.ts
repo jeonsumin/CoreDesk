@@ -29,7 +29,10 @@ export const ACCESS_LABELS: Record<MenuAccessValue, string> = {
 }
 
 const RESERVED_PREFIXES = ['/system', '/api', '/login', '/portfolio']
-const PAGE_PATH = /^\/(?!\/)[^\s?#]*$/
+const PAGE_PATH = /^\/[^\s?#\\%]*$/
+
+const hasBadSegment = (path: string) =>
+  path.split('/').slice(1).some((seg, i, a) => seg === '.' || seg === '..' || (seg === '' && i < a.length - 1))
 
 const isReserved = (path: string) =>
   RESERVED_PREFIXES.some((p) => path === p || path.startsWith(`${p}/`))
@@ -62,7 +65,7 @@ export const menuInputSchema = z
     }
     const path = v.path ?? ''
     if (v.type === 'PAGE') {
-      if (!PAGE_PATH.test(path) || (path.length > 1 && path.endsWith('/'))) {
+      if (!PAGE_PATH.test(path) || hasBadSegment(path) || (path.length > 1 && path.endsWith('/'))) {
         ctx.addIssue({ code: 'custom', path: ['path'], message: '올바른 내부 경로를 입력해주세요' })
       } else if (isReserved(path)) {
         ctx.addIssue({ code: 'custom', path: ['path'], message: '시스템 예약 경로는 사용할 수 없습니다' })

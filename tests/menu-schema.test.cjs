@@ -40,3 +40,16 @@ test('section 미지정 시 null', () => assert.equal(menuInputSchema.parse(page
 test('알 수 없는 section 거부', () => assert.equal(ok({ ...page, section: '기타' }), false))
 test('하위 메뉴의 section은 null로 정규화', () =>
   assert.equal(menuInputSchema.parse({ ...page, parentId: 'g1', section: '업무' }).section, null))
+const MSG = '올바른 내부 경로를 입력해주세요'
+const msgs = (p) => {
+  const r = menuInputSchema.safeParse({ ...page, path: p })
+  return r.success ? null : r.error.issues.map((i) => i.message)
+}
+test('PAGE: 백슬래시 거부', () => assert.deepEqual(msgs('/\\evil.com'), [MSG]))
+test('PAGE: ./ 세그먼트 거부', () => assert.deepEqual(msgs('/./system'), [MSG]))
+test('PAGE: .. 세그먼트 거부', () => {
+  assert.deepEqual(msgs('/foo/../system'), [MSG])
+  assert.deepEqual(msgs('/api/../x'), [MSG])
+})
+test('PAGE: % 인코딩 거부', () => assert.deepEqual(msgs('/%73ystem'), [MSG]))
+test('PAGE: 중간 // 거부', () => assert.deepEqual(msgs('/a//b'), [MSG]))
