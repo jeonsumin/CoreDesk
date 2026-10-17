@@ -4,6 +4,7 @@ import { signOut } from '@/lib/auth'
 import { getCurrentDbUser } from '@/lib/admin'
 import { AppSidebar, CurrentNavTitle } from '@/components/layout/AppSidebar'
 import { getCachedMenus } from '@/lib/menu/cache'
+import { toSidebarNodes } from '@/lib/menu/sidebar'
 import { buildMenuTree, filterVisibleMenus } from '@/lib/menu/resolve'
 import { Separator } from '@/components/ui/separator'
 import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar'
@@ -22,7 +23,7 @@ export default async function ModulesLayout({
   const cookieStore = await cookies()
   const defaultOpen = cookieStore.get('sidebar_state')?.value !== 'false'
 
-  const menus = filterVisibleMenus(buildMenuTree(await getCachedMenus()), user.role)
+  const menus = toSidebarNodes(filterVisibleMenus(buildMenuTree(await getCachedMenus()), user.role))
 
   async function signOutAction() {
     'use server'

@@ -6,7 +6,7 @@ import { createElement, useState } from 'react'
 import { ChevronRight, ChevronsUpDown, Folder, LogOut } from 'lucide-react'
 import { MENU_ICONS } from '@/lib/menu/icons'
 import type { IconName } from '@/lib/menu/icon-names'
-import type { MenuTreeNode } from '@/lib/menu/resolve'
+import type { SidebarNode as MenuTreeNode } from '@/lib/menu/sidebar'
 import { cn } from '@/lib/utils'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import {
@@ -158,12 +158,14 @@ function NavItemWithChildren({ item, pathname }: { item: MenuTreeNode; pathname:
   const children = item.children
 
   if (state === 'collapsed' && !isMobile) {
+    const target = children.find((c) => c.type === 'PAGE' && c.status !== 'PREPARING' && c.path)
     return (
       <SidebarMenuItem>
         <SidebarMenuButton
           isActive={inGroup}
-          tooltip={item.title}
-          render={<Link href={children[0]?.path ?? '#'} />}
+          tooltip={target ? item.title : `${item.title} (예정)`}
+          disabled={!target}
+          render={<Link href={target?.path ?? '#'} tabIndex={target ? undefined : -1} />}
         >
           <NodeIcon node={item} />
           <span>{item.title}</span>
@@ -196,7 +198,7 @@ function NavItemWithChildren({ item, pathname }: { item: MenuTreeNode; pathname:
                     child.type === 'LINK' && !preparing ? (
                       <a href={href} target="_blank" rel="noopener noreferrer" />
                     ) : (
-                      <Link href={preparing ? '#' : href} />
+                      <Link href={preparing ? '#' : href} tabIndex={preparing ? -1 : undefined} />
                     )
                   }
                 >
