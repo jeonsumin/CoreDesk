@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
-import { getCurrentDbUser } from '@/lib/admin'
+import { getCurrentDbUser, type DbSessionUser } from '@/lib/admin'
 import { requireMenuWrite } from '@/lib/menu/access'
 import { getFolderContext } from '@/lib/drive/context'
 import { canManageRoot, canModifyItem, canWriteInto } from '@/lib/drive/access'
@@ -240,13 +240,13 @@ export async function uploadFile(formData: FormData): Promise<ActionResult> {
   return { success: true }
 }
 
-async function canModifyFile(
+async function checkFileModify(
   file: { uploaderId: string; folderId: string | null },
-  user: NonNullable<Awaited<ReturnType<typeof getCurrentDbUser>>>
-): Promise<boolean> {
-  if (file.folderId === null) return file.uploaderId === user.id
+  user: DbSessionUser
+): Promise<'ok' | 'notfound' | 'forbidden'> {
+  if (file.folderId === null) return file.uploaderId === user.id ? 'ok' : 'notfound'
   const ctx = await getFolderContext(file.folderId, user, 'WRITE')
-  if (!ctx) return false
+  if (!ctx) return 'notfound'
   return canModifyItem({
     access: ctx.access,
     userId: user.id,
@@ -254,6 +254,8 @@ async function canModifyFile(
     creatorId: file.uploaderId,
     rootOwnerId: ctx.root.ownerId,
   })
+    ? 'ok'
+    : 'forbidden'
 }
 
 export async function deleteFile(id: string): Promise<ActionResult> {
@@ -266,9 +268,9 @@ export async function deleteFile(id: string): Promise<ActionResult> {
   if (!file) {
     return { success: false, error: '파일을 찾을 수 없습니다' }
   }
-  if (!(await canModifyFile(file, user))) {
-    return { success: false, error: '삭제 권한이 없습니다' }
-  }
+  const check = await checkFileModify(file, user)
+  if (check === 'notfound') return { success: false, error: '파일을 찾을 수 없습니다' }
+  if (check === 'forbidden') return { success: false, error: '삭제 권한이 없습니다' }
 
   // Delete DB row first; if the FS unlink fails we leave an orphan file
   // rather than leaving a dangling DB row pointing at a missing file.
@@ -303,9 +305,9 @@ export async function renameFile(
   if (!file) {
     return { success: false, error: '파일을 찾을 수 없습니다' }
   }
-  if (!(await canModifyFile(file, user))) {
-    return { success: false, error: '이름 변경 권한이 없습니다' }
-  }
+  const check = await checkFileModify(file, user)
+  if (check === 'notfound') return { success: false, error: '파일을 찾을 수 없습니다' }
+  if (check === 'forbidden') return { success: false, error: '이름 변경 권한이 없습니다' }
 
   await prisma.driveFile.update({
     where: { id },
