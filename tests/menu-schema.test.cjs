@@ -53,3 +53,8 @@ test('PAGE: .. 세그먼트 거부', () => {
 })
 test('PAGE: % 인코딩 거부', () => assert.deepEqual(msgs('/%73ystem'), [MSG]))
 test('PAGE: 중간 // 거부', () => assert.deepEqual(msgs('/a//b'), [MSG]))
+test('LINK: 192자 경로 거부', () => {
+  const path = 'https://x.com/' + 'a'.repeat(192 - 14)
+  assert.equal(path.length, 192)
+  assert.equal(ok({ ...page, type: 'LINK', path }), false)
+})

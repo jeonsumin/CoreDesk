@@ -1,5 +1,6 @@
 import { Menu } from 'lucide-react'
 import { prisma } from '@/lib/prisma'
+import { requireAdmin } from '@/lib/admin'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { EmptyState, Panel, PanelHeader } from '@/components/layout/Panel'
 import { buildMenuTree, type MenuTreeNode } from '@/lib/menu/resolve'
@@ -7,6 +8,7 @@ import { MenuTable, type MenuRow } from './_components/MenuTable'
 import { MenuFormDialog } from './_components/MenuFormDialog'
 
 export default async function MenusPage() {
+  await requireAdmin()
   const menus = await prisma.menu.findMany()
   // 정렬만 필요하므로 권한은 비워 둔다
   const tree = buildMenuTree(menus.map((m) => ({ ...m, permissions: [] })))

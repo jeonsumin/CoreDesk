@@ -64,6 +64,10 @@ export const menuInputSchema = z
       return
     }
     const path = v.path ?? ''
+    if (path.length > 191) {
+      ctx.addIssue({ code: 'custom', path: ['path'], message: '경로는 191자 이하로 입력해주세요' })
+      return
+    }
     if (v.type === 'PAGE') {
       if (!PAGE_PATH.test(path) || hasBadSegment(path) || (path.length > 1 && path.endsWith('/'))) {
         ctx.addIssue({ code: 'custom', path: ['path'], message: '올바른 내부 경로를 입력해주세요' })

@@ -11,7 +11,7 @@ export default auth(async (req) => {
     return NextResponse.next()
   }
   const isAuthenticated = !!req.auth
-  const isAuthPage = pathname.startsWith('/login')
+  const isAuthPage = pathname === '/login' || pathname.startsWith('/login/')
   const isPublicPage = pathname.startsWith('/portfolio/')
 
   if (!isAuthenticated && !isAuthPage && !isPublicPage) {
@@ -28,7 +28,7 @@ export default auth(async (req) => {
       ? await prisma.user.findUnique({ where: { id: userId }, select: { role: true, isActive: true } })
       : null
     if (!user || !user.isActive) {
-      return NextResponse.redirect(new URL('/api/logout', req.url))
+      return NextResponse.redirect(new URL('/api/logout', req.url), 303)
     }
     if (resolveMenuAccess(await getCachedMenus(), user.role, pathname) === 'NONE') {
       return NextResponse.rewrite(new URL('/__forbidden', req.url))
@@ -39,5 +39,5 @@ export default auth(async (req) => {
 })
 
 export const config = {
-  matcher: ['/((?!api|_next/static|_next/image|favicon.ico).*)'],
+  matcher: ['/((?!api(?:/|$)|_next/static|_next/image|favicon.ico).*)'],
 }

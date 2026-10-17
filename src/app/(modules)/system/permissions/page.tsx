@@ -1,5 +1,6 @@
 import { ShieldCheck } from 'lucide-react'
 import { prisma } from '@/lib/prisma'
+import { requireAdmin } from '@/lib/admin'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { EmptyState, Panel, PanelHeader } from '@/components/layout/Panel'
 import { buildMenuTree, type MenuTreeNode } from '@/lib/menu/resolve'
@@ -7,6 +8,7 @@ import { PERMISSION_ROLES, type MenuAccessValue, type PermissionRole } from '@/l
 import { PermissionMatrix, type PermissionRow } from './_components/PermissionMatrix'
 
 export default async function PermissionsPage() {
+  await requireAdmin()
   const menus = await prisma.menu.findMany({
     include: { permissions: { select: { role: true, access: true } } },
   })

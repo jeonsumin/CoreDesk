@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { Users } from 'lucide-react'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { requireAdmin } from '@/lib/admin'
 import { buttonVariants } from '@/components/ui/button'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { SegmentedTabs } from '@/components/layout/SegmentedTabs'
@@ -22,6 +23,7 @@ const STATUS_TABS = [
 ]
 
 export default async function UsersPage({ searchParams }: Props) {
+  await requireAdmin()
   const session = await auth()
   const { q, status = 'active' } = await searchParams
 
