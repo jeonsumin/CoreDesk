@@ -51,3 +51,11 @@ phases/**/step*-output.json
 
 .claude/
 .serena/
+
+# local tool outputs
+graphify-out/
+.playwright-mcp/
+.superpowers/
+
+# personal notes
+PROJECT.md
