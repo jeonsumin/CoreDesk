@@ -9,7 +9,7 @@ cp .env.example .env
 운영 서버에서는 `.env`의 아래 값을 실제 값으로 바꾼다.
 
 ```env
-POSTGRES_PASSWORD=replace-with-strong-database-password
+DATABASE_URL=mysql://coredesk:replace-with-strong-database-password@db:3306/coredesk
 NEXTAUTH_URL=https://coredesk.example.com
 NEXTAUTH_SECRET=replace-with-strong-auth-secret
 FIELD_ENCRYPTION_KEY=base64:REPLACE_WITH_32_BYTE_BASE64_KEY
@@ -60,4 +60,4 @@ docker compose exec app npm run secrets:encrypt
 
 ## 5. 업로드 저장소
 
-업로드 파일은 컨테이너 내부 경로 `/app/uploads`에 Docker named volume `uploads_data`로 유지한다. 서버 이전이나 백업 시 `postgres_data`와 `uploads_data`를 함께 백업해야 한다.
+업로드 파일은 컨테이너 내부 경로 `/app/uploads`에 Docker named volume `uploads_data`로 유지한다. 서버 이전이나 백업 시 `mysql_data`와 `uploads_data`를 함께 백업해야 한다.

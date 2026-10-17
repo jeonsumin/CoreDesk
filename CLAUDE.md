@@ -37,7 +37,7 @@ IT 회사에서 프로젝트 현황이 Slack·이메일·스프레드시트에 �
 | 스타일 | Tailwind CSS | 4.x |
 | 컴포넌트 | shadcn/ui | latest |
 | ORM | Prisma | 6.x |
-| DB | PostgreSQL (Docker) | 16.x |
+| DB | MySQL (Docker) | 8.4 |
 | 인증 | Auth.js (NextAuth) | v5 |
 | 유효성 검사 | Zod | 3.x |
 | 폼 | react-hook-form | 7.x |
@@ -151,7 +151,7 @@ ProjectMember projectId + userId (복합 PK), role(PM|DEVELOPER|VIEWER)
     ↓  action={serverAction}
 [Server Action]  ← 'use server'
     ↓
-[Prisma → PostgreSQL]
+[Prisma → MySQL]
     ↓
 revalidatePath('/projects')  또는  redirect()
     ↓
@@ -190,7 +190,7 @@ npm run lint             # ESLint
 npm run test             # Jest 테스트
 
 # DB (Docker 필요)
-docker compose up -d     # PostgreSQL 컨테이너 시작
+docker compose up -d     # MySQL 컨테이너 시작
 docker compose down      # 컨테이너 중지
 
 # Prisma

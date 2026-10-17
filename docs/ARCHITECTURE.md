@@ -61,7 +61,7 @@ src/
     → fetch('/api/projects') or Server Action
     → API Route Handler / Server Action
     → Prisma Client
-    → PostgreSQL
+    → MySQL
     → 응답 → UI 업데이트
 ```
 
