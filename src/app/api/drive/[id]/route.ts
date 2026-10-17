@@ -1,16 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { readFile } from 'fs/promises'
-import { auth } from '@/lib/auth'
 import { resolveDriveStoragePath } from '@/lib/drive-upload-path'
 import { prisma } from '@/lib/prisma'
+import { getCurrentDbUser } from '@/lib/admin'
+import { getMenuAccess } from '@/lib/menu/access'
+import { getFolderContext } from '@/lib/drive/context'
 
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const session = await auth()
-  if (!session?.user?.id) {
+  const user = await getCurrentDbUser()
+  if (!user) {
     return new NextResponse('Unauthorized', { status: 401 })
+  }
+
+  const menuAccess = await getMenuAccess('/drive')
+  if (menuAccess === 'NONE') {
+    return new NextResponse('Not Found', { status: 404 })
   }
 
   const { id } = await params
@@ -18,8 +25,16 @@ export async function GET(
   if (!file) {
     return new NextResponse('Not Found', { status: 404 })
   }
-  if (file.uploaderId !== session.user.id) {
-    return new NextResponse('Not Found', { status: 404 })
+
+  if (file.folderId === null) {
+    if (file.uploaderId !== user.id) {
+      return new NextResponse('Not Found', { status: 404 })
+    }
+  } else {
+    const ctx = await getFolderContext(file.folderId, user, menuAccess)
+    if (!ctx) {
+      return new NextResponse('Not Found', { status: 404 })
+    }
   }
 
   const fullPath = resolveDriveStoragePath(file.storagePath)
