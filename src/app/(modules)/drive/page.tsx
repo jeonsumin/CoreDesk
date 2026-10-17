@@ -40,6 +40,15 @@ async function buildBreadcrumb(folderId: string | null): Promise<BreadcrumbItem[
 type PermRow = { role: Role; access: MenuAccessValue }
 
 const countInclude = { _count: { select: { children: true, files: true } } } as const
+// storagePath는 서버 경로라 클라이언트로 보내지 않는다
+function toFileItem(
+  { storagePath, ...file }: Omit<DriveFileItem, 'canEdit'> & { storagePath: string },
+  canEdit: boolean
+): DriveFileItem {
+  void storagePath
+  return { ...file, canEdit }
+}
+
 const uploaderSelect = { uploader: { select: { id: true, name: true } } } as const
 
 function isPermissionRole(role: Role): role is PermissionRole {
@@ -147,10 +156,7 @@ async function loadRoot(user: DbSessionUser, menuAccess: MenuAccessValue) {
     })
   })
 
-  const files: DriveFileItem[] = ownFiles.map((file) => ({
-    ...file,
-    canEdit: menuAccess === 'WRITE',
-  }))
+  const files: DriveFileItem[] = ownFiles.map((file) => toFileItem(file, menuAccess === 'WRITE'))
 
   return { folders, sharedFolders, files, canWrite: menuAccess === 'WRITE' }
 }
@@ -202,7 +208,7 @@ export default async function DrivePage({
     folders = folderRows.map((f) =>
       toFolderItem(f, { canEdit: canModify(f.ownerId), canManage: false, badge: null, perms: null })
     )
-    files = fileRows.map((file) => ({ ...file, canEdit: canModify(file.uploaderId) }))
+    files = fileRows.map((file) => toFileItem(file, canModify(file.uploaderId)))
     canWrite = canWriteInto(ctx.access)
   }
 

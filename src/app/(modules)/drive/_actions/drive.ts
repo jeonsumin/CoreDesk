@@ -131,7 +131,7 @@ export async function deleteFolder(id: string): Promise<ActionResult> {
   if (!ctx) return { success: false, error: '폴더를 찾을 수 없습니다' }
 
   const allowed =
-    ctx.folder.rootId === null
+    ctx.folder.parentId === null
       ? canManageRoot({
           userId: user.id,
           role: user.role,
@@ -147,16 +147,13 @@ export async function deleteFolder(id: string): Promise<ActionResult> {
         })
   if (!allowed) return { success: false, error: '권한이 없습니다' }
 
-  const counts = await prisma.driveFolder.findUnique({
-    where: { id },
-    select: { _count: { select: { children: true, files: true } } },
+  // 비어 있는지 확인과 삭제를 한 쿼리로 처리해 동시 쓰기와의 경쟁을 막는다
+  const { count } = await prisma.driveFolder.deleteMany({
+    where: { id, children: { none: {} }, files: { none: {} } },
   })
-  if (!counts) return { success: false, error: '폴더를 찾을 수 없습니다' }
-  if (counts._count.children > 0 || counts._count.files > 0) {
+  if (count === 0) {
     return { success: false, error: '폴더가 비어 있지 않아 삭제할 수 없습니다' }
   }
-
-  await prisma.driveFolder.delete({ where: { id } })
 
   revalidatePath('/drive')
   return { success: true }
@@ -170,7 +167,7 @@ export async function setFolderPermissions(
   if (!user) return { success: false, error: '로그인이 필요합니다' }
 
   const ctx = await getFolderContext(rootId, user, 'WRITE')
-  if (!ctx || ctx.folder.rootId !== null) {
+  if (!ctx || ctx.folder.parentId !== null) {
     return { success: false, error: '폴더를 찾을 수 없습니다' }
   }
   if (

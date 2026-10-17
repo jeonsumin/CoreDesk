@@ -14,6 +14,7 @@ import {
   type MenuAccessValue,
   type PermissionRole,
 } from '@/lib/menu/menu-schema'
+import { ROLE_LABELS } from '@/lib/system/user-schema'
 import type { FolderPerms } from '@/lib/drive/permission-schema'
 
 type Props = {
@@ -70,13 +71,13 @@ export function FolderPermissionFields({ value, onChange }: Props) {
         <div className="space-y-2 rounded-lg border p-3">
           {PERMISSION_ROLES.map((role) => (
             <div key={role} className="flex items-center justify-between gap-3">
-              <span className="text-sm font-medium">{role}</span>
+              <span className="text-sm font-medium">{ROLE_LABELS[role]}</span>
               <Select
                 items={ACCESS_ITEMS}
                 value={accessOf(role)}
                 onValueChange={(v) => changeRole(role, v)}
               >
-                <SelectTrigger className="w-28" aria-label={`${role} 권한`}>
+                <SelectTrigger className="w-28" aria-label={`${ROLE_LABELS[role]} 권한`}>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>

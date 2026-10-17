@@ -78,7 +78,7 @@ export type DriveFolderItem = DriveFolderWithCount & {
   perms: FolderPerms | null
 }
 
-export type DriveFileItem = DriveFile & {
+export type DriveFileItem = Omit<DriveFile, 'storagePath'> & {
   uploader: Pick<User, 'id' | 'name'>
   canEdit: boolean
 }

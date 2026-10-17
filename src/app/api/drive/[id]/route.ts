@@ -15,25 +15,34 @@ export async function GET(
     return new NextResponse('Unauthorized', { status: 401 })
   }
 
-  const menuAccess = await getMenuAccess('/drive')
-  if (menuAccess === 'NONE') {
-    return new NextResponse('Not Found', { status: 404 })
-  }
-
   const { id } = await params
   const file = await prisma.driveFile.findUnique({ where: { id } })
   if (!file) {
     return new NextResponse('Not Found', { status: 404 })
   }
 
-  if (file.folderId === null) {
-    if (file.uploaderId !== user.id) {
+  // 포트폴리오 소유자는 /drive 메뉴 권한과 무관하게 자기 포트폴리오 이미지를 본다
+  const ownsPortfolioImage =
+    file.folderId !== null &&
+    (await prisma.portfolio.findFirst({
+      where: { driveFolderId: file.folderId, ownerId: user.id },
+      select: { id: true },
+    })) !== null
+
+  if (!ownsPortfolioImage) {
+    const menuAccess = await getMenuAccess('/drive')
+    if (menuAccess === 'NONE') {
       return new NextResponse('Not Found', { status: 404 })
     }
-  } else {
-    const ctx = await getFolderContext(file.folderId, user, menuAccess)
-    if (!ctx) {
-      return new NextResponse('Not Found', { status: 404 })
+    if (file.folderId === null) {
+      if (file.uploaderId !== user.id) {
+        return new NextResponse('Not Found', { status: 404 })
+      }
+    } else {
+      const ctx = await getFolderContext(file.folderId, user, menuAccess)
+      if (!ctx) {
+        return new NextResponse('Not Found', { status: 404 })
+      }
     }
   }
 

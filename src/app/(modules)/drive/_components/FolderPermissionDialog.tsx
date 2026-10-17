@@ -25,6 +25,13 @@ export function FolderPermissionDialog({ folderId, initial, open, onOpenChange }
   const [perms, setPerms] = useState<FolderPerms>(initial)
   const [isPending, startTransition] = useTransition()
 
+  // 열릴 때마다 저장된 값으로 초기화 (initial이 갱신돼도 낡은 값이 남지 않게)
+  const [wasOpen, setWasOpen] = useState(open)
+  if (open !== wasOpen) {
+    setWasOpen(open)
+    if (open) setPerms(initial)
+  }
+
   // 취소로 닫으면 다음에 열 때 저장된 값부터 보이도록 되돌린다
   const handleOpenChange = (next: boolean) => {
     if (!next && !isPending) setPerms(initial)
