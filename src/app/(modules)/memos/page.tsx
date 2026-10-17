@@ -27,6 +27,7 @@ export default async function MemosPage({ searchParams }: Props) {
 
   const where: Prisma.MemoWhereInput = {
     ownerId: session.user.id,
+    projectId: null,
     ...(q && {
       title: {
         contains: q,
@@ -36,9 +37,6 @@ export default async function MemosPage({ searchParams }: Props) {
 
   const memos = await prisma.memo.findMany({
     where,
-    include: {
-      project: { select: { id: true, name: true } },
-    },
     orderBy: { updatedAt: 'desc' },
   })
 

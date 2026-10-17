@@ -12,7 +12,6 @@ type MemoItem = {
   id: string
   title: string
   updatedAt: string
-  projectName: string | null
 }
 
 // 좌측 메모 목록. 검색은 기존과 같이 GET /memos?q= 로 보내 서버에서 거르고, 목록도 같은 q로 맞춘다
@@ -103,11 +102,6 @@ export function MemoListPanel({
                 </span>
                 <span className="mt-1 flex min-w-0 items-center gap-2 text-xs text-muted-foreground">
                   <span className="shrink-0 tabular-nums">{memo.updatedAt}</span>
-                  {memo.projectName && (
-                    <span className="truncate rounded-full border border-primary/40 px-2 text-primary">
-                      {memo.projectName}
-                    </span>
-                  )}
                 </span>
               </Link>
             )

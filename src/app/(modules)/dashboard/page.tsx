@@ -39,7 +39,7 @@ export default async function DashboardPage() {
       members: { some: { userId } },
       status: { not: 'CANCELLED' },
     },
-    include: { tasks: true },
+    include: { tasks: { where: { type: { not: 'EPIC' } } } },
     orderBy: { updatedAt: 'desc' },
   })
 
@@ -54,7 +54,8 @@ export default async function DashboardPage() {
 
   const todayTasks = await prisma.task.findMany({
     where: {
-      assigneeId: userId,
+      assignees: { some: { userId } },
+      type: { not: 'EPIC' },
       status: { not: 'DONE' },
       dueDate: { lte: todayEnd },
     },
@@ -64,7 +65,8 @@ export default async function DashboardPage() {
 
   const weekTasks = await prisma.task.findMany({
     where: {
-      assigneeId: userId,
+      assignees: { some: { userId } },
+      type: { not: 'EPIC' },
       status: { not: 'DONE' },
       dueDate: { gt: todayEnd, lte: weekEnd },
     },

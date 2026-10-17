@@ -18,7 +18,8 @@ model User {
 
   ownedProjects  Project[]       @relation("ProjectOwner")
   projectMembers ProjectMember[]
-  assignedTasks  Task[]          @relation("TaskAssignee")
+  assignedTasks  TaskAssignee[]
+  createdTasks   Task[]          @relation("TaskCreator")
   uploadedFiles  DriveFile[]     @relation("FileUploader")
   ownedFolders   DriveFolder[]   @relation("FolderOwner")
   portfolios     Portfolio[]     @relation("PortfolioOwner")
@@ -28,6 +29,10 @@ model User {
 model Project {
   id          String        @id @default(cuid())
   name        String
+  // 이슈 키 접두어 (예: BB-CIC-WEB → BB-CIC-WEB-6). 기존 프로젝트는 scripts/migrate-issue-board.cjs가 채운다
+  key         String?       @unique
+  // 프로젝트별 이슈 번호 발급 카운터
+  issueSeq    Int           @default(0)
   description String?
   status      ProjectStatus @default(IN_PROGRESS)
   startDate   DateTime?
@@ -39,7 +44,6 @@ model Project {
   owner           User             @relation("ProjectOwner", fields: [ownerId], references: [id])
   members         ProjectMember[]
   tasks           Task[]
-  milestones      Milestone[]
   projectUrls     ProjectUrl[]
   projectAccounts ProjectAccount[]
   projectDbs      ProjectDb[]
@@ -103,32 +107,42 @@ model ProjectMember {
   @@id([projectId, userId])
 }
 
+// 보드의 이슈. 에픽도 type=EPIC 인 Task 이며 같은 번호 체계를 쓴다
 model Task {
   id          String     @id @default(cuid())
   projectId   String
+  number      Int?
+  type        IssueType  @default(TASK)
+  epicId      String?
   title       String
-  description String?
+  description String?    @db.Text
   status      TaskStatus @default(TODO)
   priority    Priority   @default(MEDIUM)
-  assigneeId  String?
+  startDate   DateTime?
   dueDate     DateTime?
+  createdById String?
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
 
-  project  Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  assignee User?   @relation("TaskAssignee", fields: [assigneeId], references: [id])
+  project   Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  epic      Task?          @relation("EpicIssues", fields: [epicId], references: [id], onDelete: SetNull)
+  issues    Task[]         @relation("EpicIssues")
+  createdBy User?          @relation("TaskCreator", fields: [createdById], references: [id])
+  assignees TaskAssignee[]
+
+  @@unique([projectId, number])
+  @@index([epicId])
 }
 
-model Milestone {
-  id          String    @id @default(cuid())
-  projectId   String
-  title       String
-  startDate   DateTime?
-  dueDate     DateTime
-  isCompleted Boolean   @default(false)
-  createdAt   DateTime  @default(now())
+model TaskAssignee {
+  taskId String
+  userId String
 
-  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id])
+
+  @@id([taskId, userId])
+  @@index([userId])
 }
 
 model DriveFolder {
@@ -237,7 +251,7 @@ model Memo {
   updatedAt DateTime @updatedAt
 
   owner   User     @relation("MemoOwner", fields: [ownerId], references: [id])
-  project Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  project Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
   @@index([ownerId])
   @@index([projectId])
@@ -267,8 +281,13 @@ enum ProjectStatus {
 enum TaskStatus {
   TODO
   IN_PROGRESS
-  REVIEW
   DONE
+}
+
+enum IssueType {
+  EPIC
+  STORY
+  TASK
 }
 
 enum Priority {

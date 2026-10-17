@@ -13,8 +13,9 @@ import { ProgressBar } from '@/components/layout/StatCard'
 import { projectColor, projectStatusLabel } from '@/lib/projects/appearance'
 import { cn } from '@/lib/utils'
 import { deleteProjectFormAction } from '../_actions/project'
-import { KanbanBoard } from './tasks/_components/KanbanBoard'
-import { WbsTimeline } from './milestones/_components/WbsTimeline'
+import { IssueBoard } from './board/_components/IssueBoard'
+import { IssueTimeline } from './timeline/_components/IssueTimeline'
+import type { BoardIssue } from './board/_components/issue-meta'
 import { MemberList } from '../_components/MemberList'
 import { InfoPanel } from './info/_components/InfoPanel'
 import { ProjectMemoList } from '../_components/ProjectMemoList'
@@ -40,10 +41,12 @@ export default async function ProjectDetailPage({ params, searchParams }: Props)
         },
       },
       tasks: {
-        include: { assignee: { select: { id: true, name: true, email: true } } },
-        orderBy: [{ priority: 'asc' }, { dueDate: 'asc' }],
+        include: {
+          assignees: { select: { user: { select: { id: true, name: true } } } },
+          createdBy: { select: { id: true, name: true } },
+        },
+        orderBy: { number: 'asc' },
       },
-      milestones: { orderBy: { dueDate: 'asc' } },
       memos: {
         include: {
           owner: { select: { id: true, name: true, email: true } },
@@ -68,26 +71,28 @@ export default async function ProjectDetailPage({ params, searchParams }: Props)
     isOwner,
     memberRole: currentMember?.role,
   })
-  const canUpdateTasks =
-    isAdmin ||
-    isOwner ||
-    currentMember?.role === 'PM' ||
-    currentMember?.role === 'DEVELOPER'
+  const canUpdateStatus = canManage || currentMember?.role === 'DEVELOPER'
 
-  const total = project.tasks.length
-  const done = project.tasks.filter((t) => t.status === 'DONE').length
+  const issues: BoardIssue[] = project.tasks.map(({ assignees, ...task }) => ({
+    ...task,
+    assignees: assignees.map((a) => a.user),
+  }))
+  // 진행률은 에픽을 뺀 이슈 기준
+  const workItems = issues.filter((issue) => issue.type !== 'EPIC')
+  const total = workItems.length
+  const done = workItems.filter((t) => t.status === 'DONE').length
   const progress = total > 0 ? Math.round((done / total) * 100) : 0
-  const completedMilestones = project.milestones.filter((m) => m.isCompleted).length
+  const epicCount = issues.length - total
 
   const tabs = [
-    { key: 'tasks', label: '태스크 관리' },
-    { key: 'milestones', label: '마일스톤' },
+    { key: 'board', label: '보드' },
+    { key: 'timeline', label: '타임라인' },
     { key: 'info', label: '정보' },
     { key: 'memos', label: '메모' },
     ...(canManage ? [{ key: 'members', label: '멤버 관리' }] : []),
   ]
 
-  const activeTab = tab && tabs.some((t) => t.key === tab) ? tab : 'tasks'
+  const activeTab = tab && tabs.some((t) => t.key === tab) ? tab : 'board'
   const members = project.members.map((m) => m.user)
   const assignableMembers = members.filter((u) => u.isActive)
   const candidates =
@@ -116,6 +121,7 @@ export default async function ProjectDetailPage({ params, searchParams }: Props)
           <div className="min-w-0">
             <div className="flex items-center gap-2">
               <h2 className="truncate text-xl font-bold">{project.name}</h2>
+              {project.key && <span className="shrink-0 text-sm text-muted-foreground">{project.key}</span>}
               <Badge>{projectStatusLabel[project.status]}</Badge>
             </div>
             <p className="mt-0.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
@@ -145,10 +151,8 @@ export default async function ProjectDetailPage({ params, searchParams }: Props)
             <ProgressBar value={progress} className="mt-1.5" />
           </div>
           <div className="text-right">
-            <p className="text-xs text-muted-foreground">마일스톤</p>
-            <p className="font-bold tabular-nums">
-              {completedMilestones}/{project.milestones.length}
-            </p>
+            <p className="text-xs text-muted-foreground">에픽</p>
+            <p className="font-bold tabular-nums">{epicCount}</p>
           </div>
           {canManage && (
             <div className="flex gap-1.5">
@@ -186,20 +190,23 @@ export default async function ProjectDetailPage({ params, searchParams }: Props)
       </div>
 
       <div className="min-h-0 flex-1 overflow-auto p-4">
-        {activeTab === 'tasks' && (
-          <KanbanBoard
-            initialTasks={project.tasks}
+        {activeTab === 'board' && (
+          <IssueBoard
+            issues={issues}
             projectId={id}
+            projectKey={project.key}
             members={members}
             assignableMembers={assignableMembers}
-            canManageTasks={canManage}
-            canUpdateTasks={canUpdateTasks}
+            canManage={canManage}
+            canUpdateStatus={canUpdateStatus}
           />
         )}
-        {activeTab === 'milestones' && (
-          <WbsTimeline
-            initialMilestones={project.milestones}
+        {activeTab === 'timeline' && (
+          <IssueTimeline
+            issues={issues}
             projectId={id}
+            projectKey={project.key}
+            assignableMembers={assignableMembers}
             canManage={canManage}
           />
         )}

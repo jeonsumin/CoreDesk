@@ -2,7 +2,7 @@ import type {
   User,
   Project,
   Task,
-  Milestone,
+  TaskAssignee,
   ProjectMember,
   DriveFile,
   DriveFolder,
@@ -22,7 +22,7 @@ export type {
   User,
   Project,
   Task,
-  Milestone,
+  TaskAssignee,
   ProjectMember,
   DriveFile,
   DriveFolder,
@@ -42,6 +42,7 @@ export type {
   MemberRole,
   ProjectStatus,
   TaskStatus,
+  IssueType,
   Priority,
   PortfolioUriType,
   MenuType,
@@ -53,11 +54,10 @@ export type ProjectWithDetails = Project & {
   owner: User
   members: (ProjectMember & { user: User })[]
   tasks: Task[]
-  milestones: Milestone[]
 }
 
 export type TaskWithDetails = Task & {
-  assignee: User | null
+  assignees: (TaskAssignee & { user: User })[]
   project: Project
 }
 
@@ -90,8 +90,4 @@ export type PortfolioWithAssets = Portfolio & {
   thumbnailFile: DriveFile | null
   links: PortfolioLink[]
   images: (PortfolioImage & { file: DriveFile })[]
-}
-
-export type MemoWithProject = Memo & {
-  project: Pick<Project, 'id' | 'name'> | null
 }

@@ -6,35 +6,37 @@ const DUE_SOON_DAYS = 3
 
 type DateInput = Date | string
 
-export type MilestoneGanttInput = {
+// 날짜가 하나도 없는 항목은 행은 만들되 막대는 그리지 않는다 (hasBar=false)
+export type GanttInput = {
   id: string
   title: string
   startDate: DateInput | null
-  dueDate: DateInput
+  dueDate: DateInput | null
   isCompleted: boolean
 }
 
-export type MilestoneGanttStatus =
+export type GanttStatus =
   | 'completed'
   | 'overdue'
   | 'dueSoon'
   | 'inProgress'
   | 'scheduled'
+  | 'unscheduled'
 
-export type MilestoneGanttDay = {
+export type GanttDay = {
   date: Date
   dayOfMonth: number
   dayOfWeek: string
   isWeekend: boolean
 }
 
-export type MilestoneGanttGroup = {
+export type GanttGroup = {
   label: string
   startIndex: number
   span: number
 }
 
-export type MilestoneGanttRow = {
+export type GanttRow = {
   id: string
   title: string
   startDate: Date
@@ -43,18 +45,19 @@ export type MilestoneGanttRow = {
   endIndex: number
   spanDays: number
   isPoint: boolean
-  status: MilestoneGanttStatus
+  hasBar: boolean
+  status: GanttStatus
   dDayLabel: string
   durationLabel: string
 }
 
-export type MilestoneGanttModel = {
+export type GanttModel = {
   timelineStart: Date
   timelineEnd: Date
-  days: MilestoneGanttDay[]
-  weekGroups: MilestoneGanttGroup[]
-  monthGroups: MilestoneGanttGroup[]
-  rows: MilestoneGanttRow[]
+  days: GanttDay[]
+  weekGroups: GanttGroup[]
+  monthGroups: GanttGroup[]
+  rows: GanttRow[]
   todayIndex: number
   stats: {
     total: number
@@ -69,31 +72,33 @@ type BuildOptions = {
   minDays?: number
 }
 
-export function buildMilestoneGanttModel(
-  milestones: MilestoneGanttInput[],
+// rows 는 입력 순서를 유지한다 (그룹·정렬은 호출하는 쪽 책임)
+export function buildGanttModel(
+  items: GanttInput[],
   options: BuildOptions = {},
-): MilestoneGanttModel {
+): GanttModel {
   const today = normalizeToday(options.today ?? new Date())
-  const normalized = milestones.map((milestone) => {
-    const dueDate = normalizeDate(milestone.dueDate)
-    const rawStartDate = milestone.startDate
-      ? normalizeDate(milestone.startDate)
-      : dueDate
+  const normalized = items.map((item) => {
+    const anchor = item.dueDate ?? item.startDate
+    if (!anchor) return { ...item, startDate: today, dueDate: today, isPoint: true, hasBar: false }
+
+    const dueDate = normalizeDate(anchor)
+    const rawStartDate = item.startDate ? normalizeDate(item.startDate) : dueDate
     const startDate = rawStartDate <= dueDate ? rawStartDate : dueDate
     const endDate = rawStartDate <= dueDate ? dueDate : rawStartDate
 
     return {
-      ...milestone,
+      ...item,
       startDate,
       dueDate: endDate,
-      isPoint: !milestone.startDate || isSameUtcDate(startDate, endDate),
+      isPoint: !item.startDate || !item.dueDate || isSameUtcDate(startDate, endDate),
+      hasBar: true,
     }
   })
 
-  const rangeDates = normalized.flatMap((milestone) => [
-    milestone.startDate.getTime(),
-    milestone.dueDate.getTime(),
-  ])
+  const rangeDates = normalized
+    .filter((item) => item.hasBar)
+    .flatMap((item) => [item.startDate.getTime(), item.dueDate.getTime()])
   rangeDates.push(today.getTime())
 
   const rangeStart = new Date(Math.min(...rangeDates))
@@ -107,37 +112,35 @@ export function buildMilestoneGanttModel(
     buildDay(addUtcDays(timelineStart, index)),
   )
 
-  const rows = normalized
-    .map<MilestoneGanttRow>((milestone) => {
-      const startIndex = daysBetween(timelineStart, milestone.startDate)
-      const endIndex = daysBetween(timelineStart, milestone.dueDate)
-      const spanDays = endIndex - startIndex + 1
-      const status = getMilestoneStatus({
-        dueDate: milestone.dueDate,
-        startDate: milestone.startDate,
-        isCompleted: milestone.isCompleted,
-        today,
-      })
+  const rows = normalized.map<GanttRow>((item) => {
+    const startIndex = daysBetween(timelineStart, item.startDate)
+    const endIndex = daysBetween(timelineStart, item.dueDate)
+    const spanDays = endIndex - startIndex + 1
 
-      return {
-        id: milestone.id,
-        title: milestone.title,
-        startDate: milestone.startDate,
-        dueDate: milestone.dueDate,
-        startIndex,
-        endIndex,
-        spanDays,
-        isPoint: milestone.isPoint,
-        status,
-        dDayLabel: getDDayLabel(milestone.dueDate, today, milestone.isCompleted),
-        durationLabel: milestone.isPoint ? '1일' : `${spanDays}일`,
-      }
-    })
-    .sort((left, right) => {
-      const byStart = left.startDate.getTime() - right.startDate.getTime()
-      if (byStart !== 0) return byStart
-      return left.dueDate.getTime() - right.dueDate.getTime()
-    })
+    return {
+      id: item.id,
+      title: item.title,
+      startDate: item.startDate,
+      dueDate: item.dueDate,
+      startIndex,
+      endIndex,
+      spanDays,
+      isPoint: item.isPoint,
+      hasBar: item.hasBar,
+      status: item.hasBar
+        ? getItemStatus({
+            dueDate: item.dueDate,
+            startDate: item.startDate,
+            isCompleted: item.isCompleted,
+            today,
+          })
+        : item.isCompleted
+          ? 'completed'
+          : 'unscheduled',
+      dDayLabel: item.hasBar ? getDDayLabel(item.dueDate, today, item.isCompleted) : '',
+      durationLabel: item.isPoint ? '1일' : `${spanDays}일`,
+    }
+  })
 
   return {
     timelineStart,
@@ -219,7 +222,7 @@ function isSameUtcDate(left: Date, right: Date): boolean {
   return left.getTime() === right.getTime()
 }
 
-function buildDay(date: Date): MilestoneGanttDay {
+function buildDay(date: Date): GanttDay {
   const weekday = date.getUTCDay()
 
   return {
@@ -233,7 +236,7 @@ function buildDay(date: Date): MilestoneGanttDay {
   }
 }
 
-function buildWeekGroups(days: MilestoneGanttDay[]): MilestoneGanttGroup[] {
+function buildWeekGroups(days: GanttDay[]): GanttGroup[] {
   return buildGroups(days, (day) => {
     const start = getMondayOfUtc(day.date)
     const end = addUtcDays(start, 6)
@@ -242,7 +245,7 @@ function buildWeekGroups(days: MilestoneGanttDay[]): MilestoneGanttGroup[] {
   })
 }
 
-function buildMonthGroups(days: MilestoneGanttDay[]): MilestoneGanttGroup[] {
+function buildMonthGroups(days: GanttDay[]): GanttGroup[] {
   return buildGroups(days, (day) =>
     new Intl.DateTimeFormat('ko-KR', {
       timeZone: 'UTC',
@@ -253,10 +256,10 @@ function buildMonthGroups(days: MilestoneGanttDay[]): MilestoneGanttGroup[] {
 }
 
 function buildGroups(
-  days: MilestoneGanttDay[],
-  getLabel: (day: MilestoneGanttDay) => string,
-): MilestoneGanttGroup[] {
-  return days.reduce<MilestoneGanttGroup[]>((groups, day, index) => {
+  days: GanttDay[],
+  getLabel: (day: GanttDay) => string,
+): GanttGroup[] {
+  return days.reduce<GanttGroup[]>((groups, day, index) => {
     const label = getLabel(day)
     const previous = groups[groups.length - 1]
 
@@ -293,7 +296,7 @@ function formatCompactDate(date: Date): string {
   }).format(date)
 }
 
-function getMilestoneStatus({
+function getItemStatus({
   dueDate,
   startDate,
   isCompleted,
@@ -303,7 +306,7 @@ function getMilestoneStatus({
   startDate: Date
   isCompleted: boolean
   today: Date
-}): MilestoneGanttStatus {
+}): GanttStatus {
   if (isCompleted) return 'completed'
 
   const daysLeft = daysBetween(today, dueDate)

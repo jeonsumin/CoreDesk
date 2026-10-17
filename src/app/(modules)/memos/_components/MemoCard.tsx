@@ -2,10 +2,10 @@ import Link from 'next/link'
 import { CalendarDays } from 'lucide-react'
 import { MarkdownPreview } from '@/components/memo/MarkdownPreview'
 import { getMemoPreviewContent } from '@/lib/memo/blocks'
-import type { MemoWithProject } from '@/types'
+import type { Memo } from '@/types'
 
 type Props = {
-  memo: MemoWithProject
+  memo: Memo
 }
 
 function formatDate(date: Date): string {
@@ -36,11 +36,6 @@ export function MemoCard({ memo }: Props) {
             <CalendarDays className="size-3" />
             {formatDate(memo.updatedAt)}
           </span>
-          {memo.project && (
-            <span className="max-w-full truncate rounded-full border border-primary/40 px-2 text-primary">
-              {memo.project.name}
-            </span>
-          )}
         </div>
       </div>
       <div className="max-h-24 overflow-hidden rounded-lg bg-muted/60 px-3 py-2 text-muted-foreground">

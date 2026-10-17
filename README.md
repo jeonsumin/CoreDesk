@@ -26,7 +26,7 @@ CoreDesk는 IT/소프트웨어 회사를 위한 사내 ERP 시스템입니다. �
 | UI | React, Tailwind CSS, shadcn/ui, lucide-react |
 | 언어 | TypeScript strict |
 | 인증 | Auth.js v5 |
-| ORM/DB | Prisma, PostgreSQL |
+| ORM/DB | Prisma, MySQL |
 | 폼/검증 | react-hook-form, Zod |
 | 테스트 | Node.js test runner |
 | 배포 | Docker, Docker Compose |

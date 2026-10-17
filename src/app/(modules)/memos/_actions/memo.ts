@@ -15,25 +15,12 @@ async function ensureAuthenticated(): Promise<string> {
   return session.user.id
 }
 
-async function canUseProject(projectId: string, userId: string): Promise<boolean> {
-  const project = await prisma.project.findFirst({
-    where: {
-      id: projectId,
-      members: { some: { userId } },
-    },
+// 개인 메모만 다룬다. 프로젝트 메모(projectId 있음)는 프로젝트 모듈에서 관리한다
+async function findOwnMemo(id: string, ownerId: string) {
+  return prisma.memo.findFirst({
+    where: { id, ownerId, projectId: null },
     select: { id: true },
   })
-
-  return Boolean(project)
-}
-
-async function validateProjectLink(
-  projectId: string | undefined,
-  userId: string,
-): Promise<ActionResult> {
-  if (!projectId) return {}
-  const isMember = await canUseProject(projectId, userId)
-  return isMember ? {} : { error: '프로젝트를 찾을 수 없습니다' }
 }
 
 export async function createMemo(formData: FormData): Promise<ActionResult> {
@@ -42,23 +29,15 @@ export async function createMemo(formData: FormData): Promise<ActionResult> {
   const parsed = parseMemoFormData(formData)
   if (!parsed.success) return { error: parsed.error }
 
-  const projectValidation = await validateProjectLink(
-    parsed.data.projectId,
-    ownerId,
-  )
-  if (projectValidation.error) return projectValidation
-
   const memo = await prisma.memo.create({
     data: {
       title: parsed.data.title,
       content: parsed.data.content,
       ownerId,
-      projectId: parsed.data.projectId,
     },
   })
 
   revalidatePath('/memos')
-  if (memo.projectId) revalidatePath(`/projects/${memo.projectId}`)
   redirect(`/memos/${memo.id}`)
 }
 
@@ -68,54 +47,36 @@ export async function updateMemo(
 ): Promise<ActionResult> {
   await requireMenuWrite('/memos')
   const ownerId = await ensureAuthenticated()
-  const memo = await prisma.memo.findUnique({
-    where: { id },
-    select: { ownerId: true, projectId: true },
-  })
-  if (!memo || memo.ownerId !== ownerId) {
+  if (!(await findOwnMemo(id, ownerId))) {
     return { error: '메모를 찾을 수 없습니다' }
   }
 
   const parsed = parseMemoFormData(formData)
   if (!parsed.success) return { error: parsed.error }
 
-  const projectValidation = await validateProjectLink(
-    parsed.data.projectId,
-    ownerId,
-  )
-  if (projectValidation.error) return projectValidation
-
   await prisma.memo.update({
     where: { id },
     data: {
       title: parsed.data.title,
       content: parsed.data.content,
-      projectId: parsed.data.projectId,
     },
   })
 
   revalidatePath('/memos')
   revalidatePath(`/memos/${id}`)
-  if (memo.projectId) revalidatePath(`/projects/${memo.projectId}`)
-  if (parsed.data.projectId) revalidatePath(`/projects/${parsed.data.projectId}`)
   redirect(`/memos/${id}`)
 }
 
 export async function deleteMemo(id: string): Promise<ActionResult> {
   await requireMenuWrite('/memos')
   const ownerId = await ensureAuthenticated()
-  const memo = await prisma.memo.findUnique({
-    where: { id },
-    select: { ownerId: true, projectId: true },
-  })
-  if (!memo || memo.ownerId !== ownerId) {
+  if (!(await findOwnMemo(id, ownerId))) {
     return { error: '메모를 찾을 수 없습니다' }
   }
 
   await prisma.memo.delete({ where: { id } })
 
   revalidatePath('/memos')
-  if (memo.projectId) revalidatePath(`/projects/${memo.projectId}`)
   redirect('/memos')
 }
 

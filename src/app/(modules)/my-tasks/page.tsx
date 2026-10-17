@@ -16,7 +16,8 @@ export default async function MyTasksPage() {
 
   const tasks = await prisma.task.findMany({
     where: {
-      assigneeId: session.user.id,
+      assignees: { some: { userId: session.user.id } },
+      type: { not: 'EPIC' },
       status: { not: 'DONE' },
     },
     include: { project: true },

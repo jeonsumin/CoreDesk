@@ -9,7 +9,7 @@ cp .env.example .env
 운영 서버에서는 `.env`의 아래 값을 실제 값으로 바꾼다.
 
 ```env
-POSTGRES_PASSWORD=replace-with-strong-database-password
+DATABASE_URL=mysql://coredesk:replace-with-strong-database-password@db:3306/coredesk
 NEXTAUTH_URL=https://coredesk.example.com
 NEXTAUTH_SECRET=replace-with-strong-auth-secret
 FIELD_ENCRYPTION_KEY=base64:REPLACE_WITH_32_BYTE_BASE64_KEY
@@ -30,8 +30,18 @@ openssl rand -base64 32
 > `prisma migrate deploy`로는 스키마가 반영되지 않는다. 배포 전에 대상 DB에 대해 먼저 `npx prisma db push`를 실행해야 한다.
 > 실행하지 않으면 로그인 시 알 수 없는 컬럼(`isActive`) 오류로 로그인이 실패한다.
 
+> **릴리스 노트 (보드/타임라인 개편 배포 전 필수):** 에픽·이슈 키·다중 담당자 도입, 태스크 상태 `REVIEW` 제거, 마일스톤 제거가 포함된다.
+> 기존 데이터를 보존하려면 `prisma db push` 대신 아래 이관 스크립트를 대상 DB에 한 번 실행한다. 스크립트가 담당자를 보관 →
+> `db push --accept-data-loss` → 담당자 복원, `REVIEW`→`IN_PROGRESS`, 프로젝트 키·이슈 번호 생성까지 처리한다. **마일스톤 데이터는 삭제된다.**
+>
+> ```bash
+> DATABASE_URL=... npm run migrate:issue-board
+> ```
+>
 > **릴리스 노트 (시스템관리 2단계 배포 전 필수):** 새 이미지를 롤아웃하기 **전에** 대상 DB에 `npx prisma db push`를 먼저 실행해야 한다.
 > 실행하지 않으면 proxy가 요청마다 `Menu` 테이블을 읽으므로 인증이 필요한 모든 페이지가 500(Prisma P2021)이 된다. 자세한 절차는 §6.
+>
+> **순서:** 이관 스크립트(`migrate:issue-board`)가 `db push`를 포함하므로 2·3단계의 `db push`를 대신한다. 이관 후 `menus:seed` → `drive:backfill-root` 순으로 실행한다.
 
 ```bash
 docker compose up -d --build
@@ -66,7 +76,7 @@ docker compose exec app npm run secrets:encrypt
 
 ## 5. 업로드 저장소
 
-업로드 파일은 컨테이너 내부 경로 `/app/uploads`에 Docker named volume `uploads_data`로 유지한다. 서버 이전이나 백업 시 `postgres_data`와 `uploads_data`를 함께 백업해야 한다.
+업로드 파일은 컨테이너 내부 경로 `/app/uploads`에 Docker named volume `uploads_data`로 유지한다. 서버 이전이나 백업 시 `mysql_data`와 `uploads_data`를 함께 백업해야 한다.
 
 ## 6. 시스템관리 2단계 (메뉴관리·권한관리) 배포
 

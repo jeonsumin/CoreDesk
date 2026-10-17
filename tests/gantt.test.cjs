@@ -12,12 +12,12 @@ require('ts-node').register({
 })
 
 const {
-  buildMilestoneGanttModel,
+  buildGanttModel,
   getWeekOfMonth,
-} = require('../src/lib/projects/milestone-gantt')
+} = require('../src/lib/projects/gantt')
 
 test('builds a daily gantt model with inclusive bars, today, and milestone status', () => {
-  const model = buildMilestoneGanttModel(
+  const model = buildGanttModel(
     [
       {
         id: 'planning',
@@ -67,6 +67,22 @@ test('builds a daily gantt model with inclusive bars, today, and milestone statu
     overdue: 1,
     dueSoon: 1,
   })
+})
+
+test('rows keep input order and undated items get no bar', () => {
+  const model = buildGanttModel(
+    [
+      { id: 'late', title: 'late', startDate: '2026-02-01', dueDate: '2026-02-03', isCompleted: false },
+      { id: 'undated', title: 'undated', startDate: null, dueDate: null, isCompleted: false },
+      { id: 'early', title: 'early', startDate: null, dueDate: '2026-01-10', isCompleted: false },
+    ],
+    { today: new Date('2026-01-02T12:00:00.000Z') },
+  )
+  assert.deepEqual(model.rows.map((row) => row.id), ['late', 'undated', 'early'])
+  const undated = model.rows[1]
+  assert.equal(undated.hasBar, false)
+  assert.equal(undated.status, 'unscheduled')
+  assert.equal(model.rows[0].hasBar, true)
 })
 
 test('numbers weeks within a month starting on Monday', () => {
