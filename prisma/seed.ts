@@ -1,5 +1,6 @@
 import { PrismaClient, Role, MemberRole, ProjectStatus, TaskStatus, Priority } from '@prisma/client'
 import bcrypt from 'bcryptjs'
+import { seedMenus } from './seed-menus'
 
 const prisma = new PrismaClient()
 
@@ -106,6 +107,8 @@ async function main() {
       },
     })
   }
+
+  await seedMenus(prisma)
 
   console.log('Seed data created successfully')
 }

@@ -9,6 +9,7 @@
     "lint": "eslint",
     "test": "node --test tests/**/*.test.cjs",
     "db:seed": "prisma db seed",
+    "menus:seed": "ts-node --compiler-options '{\"module\":\"CommonJS\"}' prisma/seed-menus.ts",
     "admin:create": "node scripts/create-admin.cjs",
     "secrets:encrypt": "node scripts/encrypt-project-info-secrets.cjs"
   },
