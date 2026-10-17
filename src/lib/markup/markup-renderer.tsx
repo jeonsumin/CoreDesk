@@ -5,23 +5,25 @@ import {generateHeadingId} from '../utils';
 import remarkGfm from 'remark-gfm';
 import remarkBreaks from 'remark-breaks';
 import ReactMarkdown from 'react-markdown';
-import type {Options} from 'react-markdown';
+import type {Components, Options} from 'react-markdown';
+
+type MdNode = { type: string; value?: string; children?: MdNode[] };
 
 const remarkBreakTags = () => {
-    const visit = (node: any) => {
-        if (!node.children) return;
+    const visit = (node: MdNode) => {
+        const children = node.children;
+        if (!children) return;
 
-        node.children.map((x: any, index: number) => {
-            const child = node.children[index];
-            if (child.type === 'html' && /^<br\s*\/?>$/i.test(child.value.trim())) {
-                node.children[index] = {type: 'break'};
+        children.forEach((child, index) => {
+            if (child.type === 'html' && /^<br\s*\/?>$/i.test((child.value ?? '').trim())) {
+                children[index] = {type: 'break'};
             } else {
                 visit(child);
             }
         })
     };
 
-    return (tree: any) => {
+    return (tree: MdNode) => {
         visit(tree);
     }
 }
@@ -36,19 +38,27 @@ interface MarkupRendererProps {
 
 const Markdown = ReactMarkdown as React.FC<Options>;
 
-const extractText = (children: any): string => {
+const extractText = (children: React.ReactNode): string => {
     if (typeof children === 'string') return children;
 
     if (Array.isArray(children)) return children.join('');
     return String(children || '');
 }
 
-const heading = (Tag: any, className: string) => (props: any) => {
-    const id = generateHeadingId(extractText(props.children));
-    return <Tag id={id} className={className}>{props.children}</Tag>;
+type HeadingTag = 'h1' | 'h2' | 'h3' | 'h4';
+
+const heading = (Tag: HeadingTag, className: string) => {
+    const Heading = (props: {children?: React.ReactNode}) => {
+        const id = generateHeadingId(extractText(props.children));
+        return <Tag id={id} className={className}>{props.children}</Tag>;
+    };
+    Heading.displayName = `Heading(${Tag})`;
+    return Heading;
 };
 
-const CustomLink = ({href, children, convertEmailtoLink}: any) => {
+type CustomLinkProps = {href?: string; children?: React.ReactNode; convertEmailtoLink?: boolean};
+
+const CustomLink = ({href, children, convertEmailtoLink}: CustomLinkProps) => {
     const isEmail = href?.startsWith('mailto:');
 
     if (isEmail && convertEmailtoLink) {
@@ -76,7 +86,7 @@ const CustomLink = ({href, children, convertEmailtoLink}: any) => {
     return <span>{children}</span>
 }
 
-const CustomTableCell = (props: any) => {
+const CustomTableCell = (props: React.ComponentProps<'td'>) => {
     const cellContent = React.Children.toArray(props.children).join('');
 
     if (cellContent.startsWith('^^^')) {
@@ -101,19 +111,21 @@ const CustomTableCell = (props: any) => {
     )
 }
 
+type El = React.ReactElement<{children?: React.ReactNode}>;
+
 const computeSpannedChildren = (children: React.ReactNode): React.ReactNode => {
 
     const childArray = React.Children.toArray(children);
 
-    const tbodyIndex = childArray.findIndex((child: any) => child?.tye === 'tbody');
+    const tbodyIndex = childArray.findIndex((child) => (child as {tye?: unknown})?.tye === 'tbody') // ponytail: 기존 오타(tye) 그대로 — 고치면 rowspan 처리가 처음 동작함, 검증 후 'type'으로;
     if (tbodyIndex === -1) return children;
 
-    const tbody = childArray[tbodyIndex] as React.ReactElement<any>;
-    const rows = React.Children.toArray(tbody.props.children) as React.ReactElement<any>[];
+    const tbody = childArray[tbodyIndex] as El;
+    const rows = React.Children.toArray(tbody.props.children) as El[];
     if (rows.length === 0) return children;
 
-    const grid = rows.map((row: React.ReactElement<any>) => {
-        const cells = React.Children.toArray(row.props.children) as React.ReactElement<any>[];
+    const grid = rows.map((row: El) => {
+        const cells = React.Children.toArray(row.props.children) as El[];
 
         return cells.map(cell => {
             const cellText = React.Children.toArray(cell.props?.children).join('');
@@ -165,8 +177,8 @@ const computeSpannedChildren = (children: React.ReactNode): React.ReactNode => {
         finalizeGroup(grid.length);
     }
 
-    const newRows = rows.map((row: React.ReactElement<any>, rowIdx: number) => {
-        const cells = React.Children.toArray(row.props.children) as React.ReactElement<any>[];
+    const newRows = rows.map((row: El, rowIdx: number) => {
+        const cells = React.Children.toArray(row.props.children) as El[];
 
         const newCells: React.ReactElement[] = [];
         cells.forEach((cell, colIdx) => {
@@ -215,7 +227,7 @@ const computeSpannedChildren = (children: React.ReactNode): React.ReactNode => {
     return result;
 }
 
-const CustomTable = ({children}: any) => {
+const CustomTable = ({children}: {children?: React.ReactNode}) => {
     const processCHildren = React.useMemo(() => computeSpannedChildren(children), [children])
 
     return (
@@ -235,30 +247,30 @@ const MarkdownRenderer: React.FC<MarkupRendererProps> = (
         .replace(/\\n/g, '<br/>')
         .replace(/^(\d+)\) /gm, '$1\\) ');
 
-    const components = {
+    const components: Components = {
         h1: heading('h1', 'text-3xl font-bold text-primary mt-8 mb-4 first:mt-0'),
         h2: heading('h2', 'text-2xl font-semibold text-primary mt-8 mb-3 first:mt-0'),
         h3: heading('h3', 'text-xl font-semibold text-primary mt-6 mb-2'),
         h4: heading('h4', 'text-lg font-semibold text-primary mt-4 mb-2'),
 
-        p: (props: any) => (
+        p: (props) => (
             <p className='text-base leading-7 text-primary my-3' {...props} />
         ),
-        strong: (props: any) => (
+        strong: (props) => (
             <strong className='font-semibold text-primary' {...props} />
         ),
-        em: (props: any) => <em className='italic' {...props} />,
+        em: (props) => <em className='italic' {...props} />,
         hr: () => <hr className='my-8 border-border' />,
 
-        ul: (props: any) => <ul className='list-disc pl-6 my-3 space-y-1' {...props} />,
-        ol: (props: any) => <ol className='list-decimal pl-6 my-3 space-y-1' {...props} />,
-        li: (props: any) => <li className='text-base leading-7 text-primary' {...props} />,
+        ul: (props) => <ul className='list-disc pl-6 my-3 space-y-1' {...props} />,
+        ol: (props) => <ol className='list-decimal pl-6 my-3 space-y-1' {...props} />,
+        li: (props) => <li className='text-base leading-7 text-primary' {...props} />,
 
-        a: (props: any) => CustomLink({...props, convertEmailtoLink: convertEmailToLink}),
+        a: (props) => CustomLink({...props, convertEmailtoLink: convertEmailToLink}),
 
         table: CustomTable,
-        thead: (props: any) => <thead {...props} />,
-        th: (props: any) => {
+        thead: (props) => <thead {...props} />,
+        th: (props) => {
             const childArray = React.Children.toArray(props.children);
             let width: string | undefined;
             const processedChildren = childArray.map((child) => {
