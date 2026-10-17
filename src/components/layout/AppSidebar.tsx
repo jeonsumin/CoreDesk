@@ -2,9 +2,11 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { useState } from 'react'
-import { ChevronRight, ChevronsUpDown, LogOut } from 'lucide-react'
-import { navItems, type NavGroup, type NavItem } from '@/config/nav'
+import { createElement, useState } from 'react'
+import { ChevronRight, ChevronsUpDown, Folder, LogOut } from 'lucide-react'
+import { MENU_ICONS } from '@/lib/menu/icons'
+import type { IconName } from '@/lib/menu/icon-names'
+import type { MenuTreeNode } from '@/lib/menu/resolve'
 import { cn } from '@/lib/utils'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import {
@@ -35,7 +37,27 @@ import {
 
 type SidebarUser = { name: string; email: string }
 
-const GROUPS: NavGroup[] = ['업무', '자료', '관리']
+const NodeIcon = ({ node }: { node: MenuTreeNode }) =>
+  createElement(MENU_ICONS[node.icon as IconName] ?? Folder)
+
+// 루트 메뉴를 section 별로 묶는다. 첫 등장 순서를 유지하고 section 이 없으면 라벨 없는 그룹이 된다
+function groupBySection(menus: MenuTreeNode[]) {
+  const groups = new Map<string | null, MenuTreeNode[]>()
+  for (const m of menus) {
+    const key = m.section ?? null
+    groups.set(key, [...(groups.get(key) ?? []), m])
+  }
+  return [...groups.entries()]
+}
+
+const childPaths = (node: MenuTreeNode) =>
+  node.children.flatMap((c) => (c.type === 'PAGE' && c.path ? [c.path] : []))
+
+const PreparingBadge = () => (
+  <span className="ml-auto text-xs text-muted-foreground group-data-[collapsible=icon]:hidden">
+    예정
+  </span>
+)
 
 function isActivePath(pathname: string, href: string) {
   return pathname === href || pathname.startsWith(href + '/')
@@ -43,15 +65,14 @@ function isActivePath(pathname: string, href: string) {
 
 export function AppSidebar({
   user,
-  role,
+  menus,
   signOutAction,
 }: {
   user: SidebarUser
-  role: string
+  menus: MenuTreeNode[]
   signOutAction: () => Promise<void>
 }) {
   const pathname = usePathname()
-  const items = navItems.filter((item) => !item.adminOnly || role === 'ADMIN')
 
   return (
     <Sidebar collapsible="icon">
@@ -72,34 +93,22 @@ export function AppSidebar({
       </SidebarHeader>
 
       <SidebarContent>
-        {GROUPS.filter((group) => items.some((item) => item.group === group)).map((group) => (
-          <SidebarGroup key={group}>
-            {/* 아이콘 모드에서 숨은 라벨이 위 그룹의 마지막 메뉴를 덮어 클릭을 가로채지 않게 한다 */}
-            <SidebarGroupLabel className="group-data-[collapsible=icon]:pointer-events-none">
-              {group}
-            </SidebarGroupLabel>
+        {groupBySection(menus).map(([section, items]) => (
+          <SidebarGroup key={section ?? 'none'}>
+            {section && (
+              /* 아이콘 모드에서 숨은 라벨이 위 그룹의 마지막 메뉴를 덮어 클릭을 가로채지 않게 한다 */
+              <SidebarGroupLabel className="group-data-[collapsible=icon]:pointer-events-none">
+                {section}
+              </SidebarGroupLabel>
+            )}
             <SidebarMenu>
-              {items
-                .filter((item) => item.group === group)
-                .map((item) => {
-                  const Icon = item.icon
-                  if (item.children) {
-                    return <NavItemWithChildren key={item.href} item={item} pathname={pathname} />
-                  }
-                  return (
-                    <SidebarMenuItem key={item.href}>
-                      <SidebarMenuButton
-                        isActive={isActivePath(pathname, item.href)}
-                        tooltip={item.title}
-                        disabled={item.disabled}
-                        render={<Link href={item.disabled ? '#' : item.href} />}
-                      >
-                        <Icon />
-                        <span>{item.title}</span>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  )
-                })}
+              {items.map((item) =>
+                item.type === 'GROUP' ? (
+                  <NavItemWithChildren key={item.id} item={item} pathname={pathname} />
+                ) : (
+                  <NavLeaf key={item.id} item={item} pathname={pathname} />
+                ),
+              )}
             </SidebarMenu>
           </SidebarGroup>
         ))}
@@ -113,14 +122,40 @@ export function AppSidebar({
   )
 }
 
+function NavLeaf({ item, pathname }: { item: MenuTreeNode; pathname: string }) {
+  const preparing = item.status === 'PREPARING'
+  const href = item.path ?? '#'
+  const render =
+    item.type === 'LINK' && !preparing ? (
+      <a href={href} target="_blank" rel="noopener noreferrer" />
+    ) : (
+      <Link href={preparing ? '#' : href} />
+    )
+  return (
+    <SidebarMenuItem>
+      <SidebarMenuButton
+        isActive={
+          item.type === 'PAGE' && !preparing && !!item.path && isActivePath(pathname, item.path)
+        }
+        tooltip={item.title}
+        disabled={preparing}
+        render={render}
+      >
+        <NodeIcon node={item} />
+        <span>{item.title}</span>
+        {preparing && <PreparingBadge />}
+      </SidebarMenuButton>
+    </SidebarMenuItem>
+  )
+}
+
 // 하위 메뉴가 있는 항목 (시스템관리 > 사용자관리). 아이콘 모드에서는 첫 하위 메뉴로 바로 이동한다
-function NavItemWithChildren({ item, pathname }: { item: NavItem; pathname: string }) {
+function NavItemWithChildren({ item, pathname }: { item: MenuTreeNode; pathname: string }) {
   const { state, isMobile } = useSidebar()
-  const inGroup = isActivePath(pathname, item.href)
+  const inGroup = childPaths(item).some((p) => isActivePath(pathname, p))
   const [toggled, setToggled] = useState(false)
   const open = inGroup || toggled
-  const Icon = item.icon
-  const children = item.children ?? []
+  const children = item.children
 
   if (state === 'collapsed' && !isMobile) {
     return (
@@ -128,9 +163,9 @@ function NavItemWithChildren({ item, pathname }: { item: NavItem; pathname: stri
         <SidebarMenuButton
           isActive={inGroup}
           tooltip={item.title}
-          render={<Link href={children[0]?.href ?? item.href} />}
+          render={<Link href={children[0]?.path ?? '#'} />}
         >
-          <Icon />
+          <NodeIcon node={item} />
           <span>{item.title}</span>
         </SidebarMenuButton>
       </SidebarMenuItem>
@@ -140,7 +175,7 @@ function NavItemWithChildren({ item, pathname }: { item: NavItem; pathname: stri
   return (
     <SidebarMenuItem>
       <SidebarMenuButton aria-expanded={open} onClick={() => setToggled((v) => !v)}>
-        <Icon />
+        <NodeIcon node={item} />
         <span>{item.title}</span>
         <ChevronRight
           className={cn('ml-auto transition-transform duration-200', open && 'rotate-90')}
@@ -148,16 +183,29 @@ function NavItemWithChildren({ item, pathname }: { item: NavItem; pathname: stri
       </SidebarMenuButton>
       {open && (
         <SidebarMenuSub>
-          {children.map((child) => (
-            <SidebarMenuSubItem key={child.href}>
-              <SidebarMenuSubButton
-                isActive={isActivePath(pathname, child.href)}
-                render={<Link href={child.href} />}
-              >
-                <span>{child.title}</span>
-              </SidebarMenuSubButton>
-            </SidebarMenuSubItem>
-          ))}
+          {children.map((child) => {
+            const preparing = child.status === 'PREPARING'
+            const href = child.path ?? '#'
+            return (
+              <SidebarMenuSubItem key={child.id}>
+                <SidebarMenuSubButton
+                  isActive={!preparing && !!child.path && isActivePath(pathname, child.path)}
+                  aria-disabled={preparing || undefined}
+                  className={preparing ? 'pointer-events-none opacity-50' : undefined}
+                  render={
+                    child.type === 'LINK' && !preparing ? (
+                      <a href={href} target="_blank" rel="noopener noreferrer" />
+                    ) : (
+                      <Link href={preparing ? '#' : href} />
+                    )
+                  }
+                >
+                  <span>{child.title}</span>
+                  {preparing && <PreparingBadge />}
+                </SidebarMenuSubButton>
+              </SidebarMenuSubItem>
+            )
+          })}
         </SidebarMenuSub>
       )}
     </SidebarMenuItem>
@@ -229,14 +277,15 @@ function NavUser({
 }
 
 // 본문 상단 바에 현재 메뉴 이름을 보여준다
-export function CurrentNavTitle() {
+export function CurrentNavTitle({ menus }: { menus: MenuTreeNode[] }) {
   const pathname = usePathname()
-  const current = navItems.find((item) => isActivePath(pathname, item.href))
-  if (!current) return null
-  const child = current.children?.find((item) => isActivePath(pathname, item.href))
+  const hit = (n: MenuTreeNode) => n.type === 'PAGE' && !!n.path && isActivePath(pathname, n.path)
+  const group = menus.find((m) => hit(m) || m.children.some(hit))
+  if (!group) return null
+  const child = group.children.find(hit)
   return (
     <span className="text-sm font-medium text-muted-foreground">
-      {current.title}
+      {group.title}
       {child && ` / ${child.title}`}
     </span>
   )
