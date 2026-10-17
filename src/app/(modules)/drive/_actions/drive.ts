@@ -2,7 +2,11 @@
 
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
-import { auth } from '@/lib/auth'
+import { getCurrentDbUser } from '@/lib/admin'
+import { requireMenuWrite } from '@/lib/menu/access'
+import { getFolderContext } from '@/lib/drive/context'
+import { canManageRoot, canModifyItem, canWriteInto } from '@/lib/drive/access'
+import { folderPermsSchema, type FolderPerms } from '@/lib/drive/permission-schema'
 import { prisma } from '@/lib/prisma'
 import {
   deleteDriveFileStorage,
@@ -26,52 +30,92 @@ const renameSchema = z.object({
     .max(255, '이름이 너무 깁니다'),
 })
 
+async function getActor() {
+  await requireMenuWrite('/drive')
+  return getCurrentDbUser()
+}
+
 // ─── Folder actions ───────────────────────────────────────────────────────────
 
 export async function createFolder(
   name: string,
-  parentId: string | null
+  parentId: string | null,
+  perms?: FolderPerms
 ): Promise<ActionResult> {
-  const session = await auth()
-  if (!session?.user?.id) return { success: false, error: '로그인이 필요합니다' }
+  const user = await getActor()
+  if (!user) return { success: false, error: '로그인이 필요합니다' }
 
   const parsed = nameSchema.safeParse({ name })
   if (!parsed.success) return { success: false, error: parsed.error.errors[0].message }
+  const trimmed = parsed.data.name.trim()
 
   if (parentId) {
-    const parent = await prisma.driveFolder.findUnique({ where: { id: parentId } })
-    if (!parent || parent.ownerId !== session.user.id) {
+    const ctx = await getFolderContext(parentId, user, 'WRITE')
+    if (!ctx || !canWriteInto(ctx.access)) {
       return { success: false, error: '상위 폴더를 찾을 수 없습니다' }
     }
+
+    const duplicate = await prisma.driveFolder.findFirst({
+      where: { parentId, name: trimmed },
+    })
+    if (duplicate) return { success: false, error: '같은 이름의 폴더가 이미 있습니다' }
+
+    await prisma.driveFolder.create({
+      data: {
+        name: trimmed,
+        ownerId: user.id,
+        parentId,
+        rootId: ctx.folder.rootId ?? ctx.folder.id,
+      },
+    })
+  } else {
+    const permsParsed = folderPermsSchema.safeParse(perms ?? [])
+    if (!permsParsed.success) {
+      return { success: false, error: permsParsed.error.errors[0].message }
+    }
+
+    const duplicate = await prisma.driveFolder.findFirst({
+      where: { ownerId: user.id, parentId: null, name: trimmed },
+    })
+    if (duplicate) return { success: false, error: '같은 이름의 폴더가 이미 있습니다' }
+
+    await prisma.$transaction(async (tx) => {
+      const folder = await tx.driveFolder.create({
+        data: { name: trimmed, ownerId: user.id, parentId: null },
+      })
+      const rows = permsParsed.data.filter((p) => p.access !== 'NONE')
+      if (rows.length > 0) {
+        await tx.driveFolderPermission.createMany({
+          data: rows.map((p) => ({ folderId: folder.id, role: p.role, access: p.access })),
+        })
+      }
+    })
   }
-
-  const duplicate = await prisma.driveFolder.findFirst({
-    where: { ownerId: session.user.id, parentId: parentId ?? null, name: parsed.data.name.trim() },
-  })
-  if (duplicate) return { success: false, error: '같은 이름의 폴더가 이미 있습니다' }
-
-  await prisma.driveFolder.create({
-    data: {
-      name: parsed.data.name.trim(),
-      ownerId: session.user.id,
-      parentId: parentId ?? null,
-    },
-  })
 
   revalidatePath('/drive')
   return { success: true }
 }
 
 export async function renameFolder(id: string, newName: string): Promise<ActionResult> {
-  const session = await auth()
-  if (!session?.user?.id) return { success: false, error: '로그인이 필요합니다' }
+  const user = await getActor()
+  if (!user) return { success: false, error: '로그인이 필요합니다' }
 
   const parsed = nameSchema.safeParse({ name: newName })
   if (!parsed.success) return { success: false, error: parsed.error.errors[0].message }
 
-  const folder = await prisma.driveFolder.findUnique({ where: { id } })
-  if (!folder) return { success: false, error: '폴더를 찾을 수 없습니다' }
-  if (folder.ownerId !== session.user.id) return { success: false, error: '권한이 없습니다' }
+  const ctx = await getFolderContext(id, user, 'WRITE')
+  if (!ctx) return { success: false, error: '폴더를 찾을 수 없습니다' }
+  if (
+    !canModifyItem({
+      access: ctx.access,
+      userId: user.id,
+      role: user.role,
+      creatorId: ctx.folder.ownerId,
+      rootOwnerId: ctx.root.ownerId,
+    })
+  ) {
+    return { success: false, error: '권한이 없습니다' }
+  }
 
   await prisma.driveFolder.update({ where: { id }, data: { name: parsed.data.name.trim() } })
 
@@ -80,16 +124,35 @@ export async function renameFolder(id: string, newName: string): Promise<ActionR
 }
 
 export async function deleteFolder(id: string): Promise<ActionResult> {
-  const session = await auth()
-  if (!session?.user?.id) return { success: false, error: '로그인이 필요합니다' }
+  const user = await getActor()
+  if (!user) return { success: false, error: '로그인이 필요합니다' }
 
-  const folder = await prisma.driveFolder.findUnique({
+  const ctx = await getFolderContext(id, user, 'WRITE')
+  if (!ctx) return { success: false, error: '폴더를 찾을 수 없습니다' }
+
+  const allowed =
+    ctx.folder.rootId === null
+      ? canManageRoot({
+          userId: user.id,
+          role: user.role,
+          rootOwnerId: ctx.root.ownerId,
+          isPortfolio: ctx.isPortfolio,
+        })
+      : canModifyItem({
+          access: ctx.access,
+          userId: user.id,
+          role: user.role,
+          creatorId: ctx.folder.ownerId,
+          rootOwnerId: ctx.root.ownerId,
+        })
+  if (!allowed) return { success: false, error: '권한이 없습니다' }
+
+  const counts = await prisma.driveFolder.findUnique({
     where: { id },
-    include: { _count: { select: { children: true, files: true } } },
+    select: { _count: { select: { children: true, files: true } } },
   })
-  if (!folder) return { success: false, error: '폴더를 찾을 수 없습니다' }
-  if (folder.ownerId !== session.user.id) return { success: false, error: '권한이 없습니다' }
-  if (folder._count.children > 0 || folder._count.files > 0) {
+  if (!counts) return { success: false, error: '폴더를 찾을 수 없습니다' }
+  if (counts._count.children > 0 || counts._count.files > 0) {
     return { success: false, error: '폴더가 비어 있지 않아 삭제할 수 없습니다' }
   }
 
@@ -99,11 +162,49 @@ export async function deleteFolder(id: string): Promise<ActionResult> {
   return { success: true }
 }
 
+export async function setFolderPermissions(
+  rootId: string,
+  perms: FolderPerms
+): Promise<ActionResult> {
+  const user = await getActor()
+  if (!user) return { success: false, error: '로그인이 필요합니다' }
+
+  const ctx = await getFolderContext(rootId, user, 'WRITE')
+  if (!ctx || ctx.folder.rootId !== null) {
+    return { success: false, error: '폴더를 찾을 수 없습니다' }
+  }
+  if (
+    !canManageRoot({
+      userId: user.id,
+      role: user.role,
+      rootOwnerId: ctx.root.ownerId,
+      isPortfolio: ctx.isPortfolio,
+    })
+  ) {
+    return { success: false, error: '권한이 없습니다' }
+  }
+
+  const parsed = folderPermsSchema.safeParse(perms)
+  if (!parsed.success) return { success: false, error: parsed.error.errors[0].message }
+
+  await prisma.$transaction([
+    prisma.driveFolderPermission.deleteMany({ where: { folderId: rootId } }),
+    prisma.driveFolderPermission.createMany({
+      data: parsed.data
+        .filter((p) => p.access !== 'NONE')
+        .map((p) => ({ folderId: rootId, role: p.role, access: p.access })),
+    }),
+  ])
+
+  revalidatePath('/drive')
+  return { success: true }
+}
+
 // ─── File actions ─────────────────────────────────────────────────────────────
 
 export async function uploadFile(formData: FormData): Promise<ActionResult> {
-  const session = await auth()
-  if (!session?.user?.id) {
+  const user = await getActor()
+  if (!user) {
     return { success: false, error: '로그인이 필요합니다' }
   }
 
@@ -118,8 +219,8 @@ export async function uploadFile(formData: FormData): Promise<ActionResult> {
 
   const folderId = (formData.get('folderId') as string | null) || null
   if (folderId) {
-    const folder = await prisma.driveFolder.findUnique({ where: { id: folderId } })
-    if (!folder || folder.ownerId !== session.user.id) {
+    const ctx = await getFolderContext(folderId, user, 'WRITE')
+    if (!ctx || !canWriteInto(ctx.access)) {
       return { success: false, error: '업로드할 폴더를 찾을 수 없습니다' }
     }
   }
@@ -127,7 +228,7 @@ export async function uploadFile(formData: FormData): Promise<ActionResult> {
   try {
     await uploadDriveFile({
       file,
-      uploaderId: session.user.id,
+      uploaderId: user.id,
       folderId,
     })
   } catch (err) {
@@ -139,9 +240,25 @@ export async function uploadFile(formData: FormData): Promise<ActionResult> {
   return { success: true }
 }
 
+async function canModifyFile(
+  file: { uploaderId: string; folderId: string | null },
+  user: NonNullable<Awaited<ReturnType<typeof getCurrentDbUser>>>
+): Promise<boolean> {
+  if (file.folderId === null) return file.uploaderId === user.id
+  const ctx = await getFolderContext(file.folderId, user, 'WRITE')
+  if (!ctx) return false
+  return canModifyItem({
+    access: ctx.access,
+    userId: user.id,
+    role: user.role,
+    creatorId: file.uploaderId,
+    rootOwnerId: ctx.root.ownerId,
+  })
+}
+
 export async function deleteFile(id: string): Promise<ActionResult> {
-  const session = await auth()
-  if (!session?.user?.id) {
+  const user = await getActor()
+  if (!user) {
     return { success: false, error: '로그인이 필요합니다' }
   }
 
@@ -149,7 +266,7 @@ export async function deleteFile(id: string): Promise<ActionResult> {
   if (!file) {
     return { success: false, error: '파일을 찾을 수 없습니다' }
   }
-  if (file.uploaderId !== session.user.id) {
+  if (!(await canModifyFile(file, user))) {
     return { success: false, error: '삭제 권한이 없습니다' }
   }
 
@@ -172,8 +289,8 @@ export async function renameFile(
   id: string,
   newName: string
 ): Promise<ActionResult> {
-  const session = await auth()
-  if (!session?.user?.id) {
+  const user = await getActor()
+  if (!user) {
     return { success: false, error: '로그인이 필요합니다' }
   }
 
@@ -186,7 +303,7 @@ export async function renameFile(
   if (!file) {
     return { success: false, error: '파일을 찾을 수 없습니다' }
   }
-  if (file.uploaderId !== session.user.id) {
+  if (!(await canModifyFile(file, user))) {
     return { success: false, error: '이름 변경 권한이 없습니다' }
   }
 
