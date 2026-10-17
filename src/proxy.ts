@@ -6,6 +6,10 @@ import { NextResponse } from 'next/server'
 
 export default auth(async (req) => {
   const { pathname } = req.nextUrl
+  // public/ 정적 파일은 루트 한 단계 경로에만 있다. 점(.)이 들어간 동적 경로(/memos/x.y)는 proxy를 타야 한다.
+  if (/^\/[^/]+\.(svg|png|jpe?g|gif|ico|webp|txt|xml|webmanifest)$/.test(pathname)) {
+    return NextResponse.next()
+  }
   const isAuthenticated = !!req.auth
   const isAuthPage = pathname.startsWith('/login')
   const isPublicPage = pathname.startsWith('/portfolio/')
@@ -35,5 +39,5 @@ export default auth(async (req) => {
 })
 
 export const config = {
-  matcher: ['/((?!api|_next/static|_next/image|favicon.ico|.*\\..*).*)'],
+  matcher: ['/((?!api|_next/static|_next/image|favicon.ico).*)'],
 }
