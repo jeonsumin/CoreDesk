@@ -30,11 +30,17 @@ openssl rand -base64 32
 > `prisma migrate deploy`로는 스키마가 반영되지 않는다. 배포 전에 대상 DB에 대해 먼저 `npx prisma db push`를 실행해야 한다.
 > 실행하지 않으면 로그인 시 알 수 없는 컬럼(`isActive`) 오류로 로그인이 실패한다.
 
+> **릴리스 노트 (시스템관리 2단계 배포 전 필수):** 새 이미지를 롤아웃하기 **전에** 대상 DB에 `npx prisma db push`를 먼저 실행해야 한다.
+> 실행하지 않으면 proxy가 요청마다 `Menu` 테이블을 읽으므로 인증이 필요한 모든 페이지가 500(Prisma P2021)이 된다. 자세한 절차는 §6.
+
 ```bash
 docker compose up -d --build
 ```
 
-앱 컨테이너는 시작 시 `prisma migrate deploy`를 실행한 뒤 `next start`로 기동한다.
+실행 위치별 동작:
+
+- 이미지 `CMD`는 `npm run start`(`next start`)뿐이며, 컨테이너 시작 시 Prisma 마이그레이션이나 `db push`를 실행하지 않는다.
+- k8s(`k8s/30-deployment.yaml`)는 initContainer `migrate`에서 `prisma migrate deploy`를 실행한다. 다만 이 프로젝트의 `prisma/migrations/`는 PostgreSQL SQL이라 MySQL 스키마 변경(`isActive`, `Menu` 등)을 반영하지 못하므로, 스키마 반영은 별도로 `prisma db push`를 실행해야 한다.
 
 ## 3. 최고관리자 생성
 
@@ -67,10 +73,13 @@ docker compose exec app npm run secrets:encrypt
 사이드바가 DB 메뉴 기반으로 바뀌었으므로 배포 시 대상 DB에 대해 아래 순서로 실행한다.
 
 ```bash
-npx prisma db push      # Menu, MenuPermission 테이블 반영
-npm run menus:seed      # 기본 메뉴와 권한 시드
+# 개발 체크아웃 또는 CI 머신에서, DATABASE_URL을 대상 DB로 지정해 실행한다.
+# 운영 이미지는 `npm ci --omit=dev`라 ts-node(devDependency)가 없어 menus:seed를 실행할 수 없다.
+DATABASE_URL="<대상 DB URL>" npx prisma db push      # Menu, MenuPermission 테이블 반영 (이미지 롤아웃 전)
+DATABASE_URL="<대상 DB URL>" npm run menus:seed      # 기본 메뉴와 권한 시드
 ```
 
 - `menus:seed`는 멱등이며 데모 사용자를 만들지 않는다. (`db:seed`도 메뉴를 시드하지만 데모 사용자까지 만들므로 운영에는 쓰지 않는다.)
-- 시드 전에 배포하면 사이드바가 비어 보인다. 페이지는 그대로 열리므로, 시드를 실행하면 바로 복구된다.
+- `menus:seed`를 다시 실행하면 관리자가 삭제한 시드 메뉴가 다시 생성된다.
+- `db push` 후 시드 전에 배포하면 사이드바가 비어 보일 뿐 페이지는 열리며, 시드를 실행하면 바로 복구된다. `db push` 없이 배포하면 모든 인증 페이지가 500이 된다.
 - `src/middleware.ts`는 `src/proxy.ts`로 대체되었다(Next 16, Node 런타임). 요청마다 비활성 사용자와 숨김 처리된 메뉴 경로를 차단한다.
