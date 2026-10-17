@@ -10,6 +10,7 @@
     "test": "node --test tests/**/*.test.cjs",
     "db:seed": "prisma db seed",
     "menus:seed": "ts-node --compiler-options '{\"module\":\"CommonJS\"}' prisma/seed-menus.ts",
+    "drive:backfill-root": "ts-node --compiler-options '{\"module\":\"CommonJS\"}' prisma/backfill-drive-root.ts",
     "admin:create": "node scripts/create-admin.cjs",
     "secrets:encrypt": "node scripts/encrypt-project-info-secrets.cjs"
   },

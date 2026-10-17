@@ -136,14 +136,28 @@ model DriveFolder {
   name      String
   ownerId   String
   parentId  String?
+  rootId    String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  owner     User          @relation("FolderOwner", fields: [ownerId], references: [id])
-  parent    DriveFolder?  @relation("FolderTree", fields: [parentId], references: [id])
-  children  DriveFolder[] @relation("FolderTree")
-  files     DriveFile[]
-  portfolio Portfolio?    @relation("PortfolioFolder")
+  owner       User                    @relation("FolderOwner", fields: [ownerId], references: [id])
+  parent      DriveFolder?            @relation("FolderTree", fields: [parentId], references: [id])
+  children    DriveFolder[]           @relation("FolderTree")
+  files       DriveFile[]
+  portfolio   Portfolio?              @relation("PortfolioFolder")
+  permissions DriveFolderPermission[]
+
+  @@index([rootId])
+}
+
+model DriveFolderPermission {
+  folderId String
+  role     Role
+  access   MenuAccess
+
+  folder DriveFolder @relation(fields: [folderId], references: [id], onDelete: Cascade)
+
+  @@id([folderId, role])
 }
 
 model DriveFile {
@@ -167,7 +181,7 @@ model DriveFile {
 model Portfolio {
   id              String   @id @default(cuid())
   title           String
-  description     String?    @db.Text
+  description     String?  @db.Text
   techSpecs       Json
   ownerId         String
   driveFolderId   String   @unique
