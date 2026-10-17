@@ -9,6 +9,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog'
+import { Flag, Plus } from 'lucide-react'
+import { CountBadge, EmptyState, Panel, PanelHeader } from '@/components/layout/Panel'
 import { MilestoneItem } from './_components/MilestoneItem'
 import { MilestoneForm } from './_components/MilestoneForm'
 
@@ -36,77 +38,73 @@ export default async function MilestonesPage({ params }: Props) {
   const pending = project.milestones.filter((m) => !m.isCompleted)
   const nowMs = new Date().getTime()
 
-  return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">마일스톤</h1>
-          <p className="text-muted-foreground">
-            {project.name} · {completed.length}/{project.milestones.length} 완료
-          </p>
-        </div>
-        <Dialog>
-          <DialogTrigger render={<Button />}>마일스톤 추가</DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>새 마일스톤</DialogTitle>
-            </DialogHeader>
-            <MilestoneForm projectId={id} />
-          </DialogContent>
-        </Dialog>
-      </div>
+  const newMilestoneDialog = (trigger: React.ReactElement) => (
+    <Dialog>
+      <DialogTrigger render={trigger} />
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>새 마일스톤</DialogTitle>
+        </DialogHeader>
+        <MilestoneForm projectId={id} />
+      </DialogContent>
+    </Dialog>
+  )
 
-      {project.milestones.length === 0 ? (
-        <div className="rounded-lg border border-dashed p-12 text-center">
-          <p className="text-muted-foreground mb-4">아직 마일스톤이 없습니다.</p>
-          <Dialog>
-            <DialogTrigger render={<Button />}>첫 마일스톤 추가하기</DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>새 마일스톤</DialogTitle>
-              </DialogHeader>
-              <MilestoneForm projectId={id} />
-            </DialogContent>
-          </Dialog>
-        </div>
-      ) : (
-        <div className="space-y-6">
-          {pending.length > 0 && (
-            <div>
-              <h2 className="text-sm font-semibold text-muted-foreground mb-2">
-                진행 중 ({pending.length})
-              </h2>
-              <div className="space-y-2">
-                {pending.map((m) => (
-                  <MilestoneItem
-                    key={m.id}
-                    milestone={m}
-                    projectId={id}
-                    nowMs={nowMs}
-                  />
-                ))}
-              </div>
-            </div>
-          )}
-          {completed.length > 0 && (
-            <div>
-              <h2 className="text-sm font-semibold text-muted-foreground mb-2">
-                완료 ({completed.length})
-              </h2>
-              <div className="space-y-2">
-                {completed.map((m) => (
-                  <MilestoneItem
-                    key={m.id}
-                    milestone={m}
-                    projectId={id}
-                    nowMs={nowMs}
-                  />
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-    </div>
+  const groups = [
+    { key: 'pending', label: '진행 중', items: pending },
+    { key: 'completed', label: '완료', items: completed },
+  ]
+
+  return (
+    <Panel className="flex-1">
+      <PanelHeader
+        icon={<Flag />}
+        title={`${project.name} 마일스톤 · ${completed.length}/${project.milestones.length} 완료`}
+        actions={newMilestoneDialog(
+          <Button size="icon" aria-label="마일스톤 추가" title="마일스톤 추가">
+            <Plus />
+          </Button>,
+        )}
+      />
+
+      <div className="min-h-0 flex-1 overflow-auto p-4">
+        {project.milestones.length === 0 ? (
+          <EmptyState
+            icon={<Flag />}
+            title="아직 마일스톤이 없습니다."
+            description="주요 일정과 목표를 마일스톤으로 등록하세요."
+            action={newMilestoneDialog(
+              <Button>
+                <Plus data-icon="inline-start" />첫 마일스톤 추가하기
+              </Button>,
+            )}
+          />
+        ) : (
+          <div className="space-y-6">
+            {groups.map(
+              (group) =>
+                group.items.length > 0 && (
+                  <section key={group.key}>
+                    <h3 className="mb-2 flex items-center gap-2 text-sm font-semibold">
+                      {group.label}
+                      <CountBadge>{group.items.length}</CountBadge>
+                    </h3>
+                    <div className="border-t">
+                      {group.items.map((m) => (
+                        <MilestoneItem
+                          key={m.id}
+                          milestone={m}
+                          projectId={id}
+                          nowMs={nowMs}
+                        />
+                      ))}
+                    </div>
+                  </section>
+                ),
+            )}
+          </div>
+        )}
+      </div>
+    </Panel>
   )
 }

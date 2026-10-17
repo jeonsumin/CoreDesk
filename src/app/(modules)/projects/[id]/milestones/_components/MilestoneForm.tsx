@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useTransition } from 'react'
-import { Button } from '@/components/ui/button'
+import { FormActions } from '@/components/form/FormActions'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { toDateInputValue } from '@/lib/projects/milestone-gantt'
@@ -40,7 +40,7 @@ export function MilestoneForm({
   return (
     <form action={handleAction} className="space-y-4">
       <div className="space-y-2">
-        <Label htmlFor="title">마일스톤명 *</Label>
+        <Label className="font-semibold" htmlFor="title">마일스톤명 *</Label>
         <Input
           id="title"
           name="title"
@@ -51,7 +51,7 @@ export function MilestoneForm({
       </div>
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="startDate">시작일</Label>
+          <Label className="font-semibold" htmlFor="startDate">시작일</Label>
           <Input
             id="startDate"
             name="startDate"
@@ -62,7 +62,7 @@ export function MilestoneForm({
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="dueDate">마감일 *</Label>
+          <Label className="font-semibold" htmlFor="dueDate">마감일 *</Label>
           <Input
             id="dueDate"
             name="dueDate"
@@ -73,9 +73,10 @@ export function MilestoneForm({
         </div>
       </div>
       {error && <p className="text-sm text-destructive">{error}</p>}
-      <Button type="submit" className="w-full" disabled={isPending}>
-        {isPending ? '저장 중...' : milestone ? '수정' : '마일스톤 추가'}
-      </Button>
+      <FormActions
+        isPending={isPending}
+        submitLabel={milestone ? '변경사항 저장' : '마일스톤 추가'}
+      />
     </form>
   )
 }

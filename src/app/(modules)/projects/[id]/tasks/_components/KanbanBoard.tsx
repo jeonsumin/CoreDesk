@@ -1,7 +1,7 @@
 'use client'
 
 import { useMemo, useState, useTransition, useOptimistic } from 'react'
-import type { ReactNode } from 'react'
+import type { ReactElement, ReactNode } from 'react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import {
   AlertTriangle,
@@ -30,6 +30,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog'
+import { CountBadge, EmptyState } from '@/components/layout/Panel'
 import { cn } from '@/lib/utils'
 import {
   buildKanbanBoardModel,
@@ -51,6 +52,7 @@ type Props = {
   initialTasks: TaskWithAssignee[]
   projectId: string
   members: Pick<User, 'id' | 'name'>[]
+  // 새 태스크·담당자 변경에는 활성 멤버만 고를 수 있다
   assignableMembers: Pick<User, 'id' | 'name'>[]
   canManageTasks?: boolean
   canUpdateTasks?: boolean
@@ -145,174 +147,155 @@ export function KanbanBoard({
     })
   }
 
-  return (
-    <div className="flex h-full min-h-[540px] flex-col overflow-hidden rounded-lg border bg-background">
-      <div className="flex shrink-0 flex-col gap-3 border-b px-4 py-3">
-        <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
-          <div className="min-w-0">
-            <div className="flex items-center gap-2">
-              <CircleDashed className="size-4 text-primary" />
-              <h2 className="text-base font-semibold">태스크 보드</h2>
-              {!canUpdateTasks && <Badge variant="outline">읽기 전용</Badge>}
-            </div>
-            <p className="mt-1 text-xs text-muted-foreground">
-              {model.stats.completed}/{model.stats.total} 완료 · 표시{' '}
-              {model.stats.visible}개
-            </p>
-          </div>
+  const assigneeItems = [
+    { value: 'all', label: '전체 담당자' },
+    { value: 'unassigned', label: '미배정' },
+    ...members.map((member) => ({ value: member.id, label: member.name })),
+  ]
 
-          <div className="flex flex-wrap items-center gap-2">
-            <BoardMetric
-              icon={<CheckCircle2 className="size-3.5" />}
-              label="진행률"
-              value={`${model.stats.progress}%`}
-            />
-            {model.stats.overdue > 0 && (
-              <BoardMetric
-                tone="danger"
-                icon={<AlertTriangle className="size-3.5" />}
-                label="초과"
-                value={String(model.stats.overdue)}
-              />
-            )}
-            {model.stats.dueSoon > 0 && (
-              <BoardMetric
-                tone="warning"
-                icon={<Clock3 className="size-3.5" />}
-                label="임박"
-                value={String(model.stats.dueSoon)}
-              />
-            )}
-            {model.stats.unassigned > 0 && (
-              <BoardMetric
-                tone="muted"
-                icon={<UserRound className="size-3.5" />}
-                label="미배정"
-                value={String(model.stats.unassigned)}
-              />
-            )}
-            {canManageTasks && (
-              <Dialog>
-                <DialogTrigger
-                  render={
-                    <Button size="sm">
-                      <Plus data-icon="inline-start" />
-                      태스크 추가
-                    </Button>
-                  }
-                />
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>새 태스크</DialogTitle>
-                  </DialogHeader>
-                  <TaskForm projectId={projectId} members={assignableMembers} />
-                </DialogContent>
-              </Dialog>
-            )}
-          </div>
+  return (
+    <div className="flex h-full min-h-[540px] flex-col gap-4">
+      {/* 툴바: 추가 / 검색 / 필터 / 요약 수치 (패널 안이므로 테두리 없음) */}
+      <div className="flex shrink-0 flex-wrap items-center gap-2">
+        {canManageTasks && (
+          <NewTaskDialog
+            projectId={projectId}
+            members={assignableMembers}
+            trigger={
+              <Button size="icon" aria-label="태스크 추가" title="태스크 추가">
+                <Plus />
+              </Button>
+            }
+          />
+        )}
+
+        <div className="relative w-full min-w-48 sm:w-64">
+          <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            value={filters.query}
+            onChange={(event) => updateFilter('taskQ', event.target.value)}
+            placeholder="태스크명, 설명, 담당자 검색"
+            className="h-8 pl-9 text-sm"
+          />
         </div>
 
-        <div className="flex flex-col gap-2 lg:flex-row lg:items-center">
-          <div className="relative min-w-0 flex-1">
-            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              value={filters.query}
-              onChange={(event) => updateFilter('taskQ', event.target.value)}
-              placeholder="태스크명, 설명, 담당자 검색"
-              className="h-8 pl-9 text-sm"
+        <Select
+          items={assigneeItems}
+          value={filters.assigneeId}
+          onValueChange={(value) => updateFilter('taskAssignee', value)}
+        >
+          <SelectTrigger size="sm" className="w-36 text-xs">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {assigneeItems.map((item) => (
+              <SelectItem key={item.value} value={item.value}>
+                {item.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        <Select
+          items={priorityFilterItems}
+          value={filters.priority}
+          onValueChange={(value) => updateFilter('taskPriority', value)}
+        >
+          <SelectTrigger size="sm" className="w-32 text-xs">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {priorityFilterItems.map((item) => (
+              <SelectItem key={item.value} value={item.value}>
+                {item.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        <Select
+          items={dueFilterItems}
+          value={filters.due}
+          onValueChange={(value) => updateFilter('taskDue', value)}
+        >
+          <SelectTrigger size="sm" className="w-28 text-xs">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {dueFilterItems.map((item) => (
+              <SelectItem key={item.value} value={item.value}>
+                {item.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        {hasFilters && (
+          <Button variant="ghost" size="sm" onClick={clearFilters}>
+            <FilterX data-icon="inline-start" />
+            초기화
+          </Button>
+        )}
+
+        <div className="ml-auto flex flex-wrap items-center gap-1.5">
+          {!canUpdateTasks && <Badge variant="outline">읽기 전용</Badge>}
+          <span className="text-xs text-muted-foreground tabular-nums">
+            {model.stats.completed}/{model.stats.total} 완료 · 표시 {model.stats.visible}개
+          </span>
+          <BoardMetric
+            icon={<CheckCircle2 className="size-3.5" />}
+            label="진행률"
+            value={`${model.stats.progress}%`}
+          />
+          {model.stats.overdue > 0 && (
+            <BoardMetric
+              tone="danger"
+              icon={<AlertTriangle className="size-3.5" />}
+              label="초과"
+              value={String(model.stats.overdue)}
             />
-          </div>
-
-          <div className="flex flex-wrap items-center gap-2">
-            <Select
-              value={filters.assigneeId}
-              onValueChange={(value) => updateFilter('taskAssignee', value)}
-            >
-              <SelectTrigger size="sm" className="w-36">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">전체 담당자</SelectItem>
-                <SelectItem value="unassigned">미배정</SelectItem>
-                {members.map((member) => (
-                  <SelectItem key={member.id} value={member.id}>
-                    {member.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            <Select
-              value={filters.priority}
-              onValueChange={(value) => updateFilter('taskPriority', value)}
-            >
-              <SelectTrigger size="sm" className="w-32">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">전체 우선순위</SelectItem>
-                <SelectItem value="HIGH">높음</SelectItem>
-                <SelectItem value="MEDIUM">보통</SelectItem>
-                <SelectItem value="LOW">낮음</SelectItem>
-              </SelectContent>
-            </Select>
-
-            <Select
-              value={filters.due}
-              onValueChange={(value) => updateFilter('taskDue', value)}
-            >
-              <SelectTrigger size="sm" className="w-28">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">전체 마감</SelectItem>
-                <SelectItem value="overdue">초과</SelectItem>
-                <SelectItem value="dueSoon">임박</SelectItem>
-                <SelectItem value="later">여유</SelectItem>
-                <SelectItem value="none">마감 없음</SelectItem>
-              </SelectContent>
-            </Select>
-
-            {hasFilters && (
-              <Button variant="ghost" size="sm" onClick={clearFilters}>
-                <FilterX data-icon="inline-start" />
-                초기화
-              </Button>
-            )}
-          </div>
+          )}
+          {model.stats.dueSoon > 0 && (
+            <BoardMetric
+              tone="warning"
+              icon={<Clock3 className="size-3.5" />}
+              label="임박"
+              value={String(model.stats.dueSoon)}
+            />
+          )}
+          {model.stats.unassigned > 0 && (
+            <BoardMetric
+              icon={<UserRound className="size-3.5" />}
+              label="미배정"
+              value={String(model.stats.unassigned)}
+            />
+          )}
         </div>
       </div>
 
       {model.stats.total === 0 ? (
-        <div className="flex flex-1 items-center justify-center p-8">
-          <div className="w-full max-w-md rounded-lg border border-dashed p-8 text-center">
-            <CircleDashed className="mx-auto mb-3 size-8 text-muted-foreground" />
-            <p className="font-medium">등록된 태스크가 없습니다.</p>
-            <p className="mt-1 text-sm text-muted-foreground">
-              프로젝트 실행 항목을 보드에 추가해 진행 상태를 관리하세요.
-            </p>
-            {canManageTasks && (
-              <Dialog>
-                <DialogTrigger
-                  render={
-                    <Button className="mt-4">
-                      <Plus data-icon="inline-start" />첫 태스크 추가
-                    </Button>
-                  }
-                />
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>새 태스크</DialogTitle>
-                  </DialogHeader>
-                  <TaskForm projectId={projectId} members={assignableMembers} />
-                </DialogContent>
-              </Dialog>
-            )}
-          </div>
-        </div>
+        <EmptyState
+          className="flex-1"
+          icon={<CircleDashed />}
+          title="등록된 태스크가 없습니다."
+          description="프로젝트 실행 항목을 보드에 추가해 진행 상태를 관리하세요."
+          action={
+            canManageTasks && (
+              <NewTaskDialog
+                projectId={projectId}
+                members={assignableMembers}
+                trigger={
+                  <Button>
+                    <Plus data-icon="inline-start" />첫 태스크 추가
+                  </Button>
+                }
+              />
+            )
+          }
+        />
       ) : (
-        <div className="min-h-0 flex-1 overflow-x-auto p-3">
-          <div className="grid min-h-full min-w-[1120px] grid-cols-4 gap-3">
+        <div className="min-h-0 flex-1 overflow-x-auto">
+          <div className="grid min-h-full min-w-[1120px] grid-cols-4 gap-4">
             {model.columns.map((column) => {
               const { status, label } = column
               const isDragOver = dragOverStatus === status
@@ -321,10 +304,8 @@ export function KanbanBoard({
                 <div
                   key={status}
                   className={cn(
-                    'flex min-h-[430px] flex-col rounded-lg border border-t-4 transition-colors',
-                    column.accentClassName,
-                    column.softClassName,
-                    isDragOver && 'ring-2 ring-primary/25 brightness-95',
+                    'flex min-h-[430px] flex-col rounded-xl bg-muted/50 transition-colors',
+                    isDragOver && 'bg-primary/5 ring-2 ring-primary/25',
                   )}
                   onDragOver={(event) => {
                     if (!canUpdateTasks) return
@@ -341,42 +322,34 @@ export function KanbanBoard({
                   }}
                   onDrop={() => handleDrop(status)}
                 >
-                  <div className="flex items-start justify-between gap-2 px-3 py-3">
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span
-                          className={cn(
-                            'text-sm font-semibold',
-                            column.textClassName,
-                          )}
-                        >
-                          {label}
-                        </span>
-                        <span className="rounded-full border bg-background px-1.5 py-0.5 text-xs font-medium leading-none text-muted-foreground">
-                          {column.totalCount}
-                        </span>
-                      </div>
-                      <p className="mt-0.5 text-xs text-muted-foreground">
-                        {column.description}
-                      </p>
+                  <div
+                    className="flex shrink-0 items-center justify-between gap-2 px-3 py-2.5"
+                    title={column.description}
+                  >
+                    <div className="flex min-w-0 items-center gap-2">
+                      <span
+                        className={cn('size-2 shrink-0 rounded-full', column.dotClassName)}
+                      />
+                      <span className="text-sm font-semibold">{label}</span>
+                      <CountBadge>{column.totalCount}</CountBadge>
                     </div>
                     <div className="flex shrink-0 gap-1">
                       {column.overdueCount > 0 && (
-                        <Badge className="border-red-200 bg-red-50 text-red-700">
-                          {column.overdueCount}
-                        </Badge>
+                        <span className="rounded-md border border-red-200 bg-red-50 px-1.5 py-0.5 text-xs font-semibold text-red-600">
+                          초과 {column.overdueCount}
+                        </span>
                       )}
                       {column.highPriorityCount > 0 && (
-                        <Badge className="border-zinc-200 bg-background text-zinc-700">
+                        <span className="rounded-md border bg-card px-1.5 py-0.5 text-xs font-semibold text-muted-foreground">
                           높음 {column.highPriorityCount}
-                        </Badge>
+                        </span>
                       )}
                     </div>
                   </div>
 
                   <div className="min-h-[120px] flex-1 space-y-2 overflow-y-auto px-2 pb-2">
                     {column.tasks.length === 0 ? (
-                      <div className="flex h-28 items-center justify-center rounded-lg border border-dashed bg-background/60 px-3 text-center text-xs text-muted-foreground">
+                      <div className="flex h-24 items-center justify-center px-3 text-center text-xs text-muted-foreground">
                         {hasFilters
                           ? '조건에 맞는 태스크가 없습니다.'
                           : `${label} 태스크 없음`}
@@ -394,36 +367,24 @@ export function KanbanBoard({
                         />
                       ))
                     )}
-                  </div>
 
-                  {canManageTasks && (
-                    <div className="border-t bg-background/40 p-2">
-                      <Dialog>
-                        <DialogTrigger
-                          render={
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-8 w-full justify-start gap-1.5 text-xs font-normal text-muted-foreground hover:text-foreground"
-                            >
-                              <Plus size={14} />
-                              태스크 추가
-                            </Button>
-                          }
-                        />
-                        <DialogContent>
-                          <DialogHeader>
-                            <DialogTitle>새 태스크</DialogTitle>
-                          </DialogHeader>
-                          <TaskForm
-                            projectId={projectId}
-                            members={assignableMembers}
-                            defaultStatus={status}
-                          />
-                        </DialogContent>
-                      </Dialog>
-                    </div>
-                  )}
+                    {canManageTasks && (
+                      <NewTaskDialog
+                        projectId={projectId}
+                        members={assignableMembers}
+                        defaultStatus={status}
+                        trigger={
+                          <button
+                            type="button"
+                            className="flex w-full items-center justify-center gap-2 rounded-lg border-2 border-dashed border-muted-foreground/20 p-2 text-sm text-muted-foreground transition-colors hover:border-primary/50 hover:text-primary"
+                          >
+                            <Plus className="size-4" />
+                            태스크 추가
+                          </button>
+                        }
+                      />
+                    )}
+                  </div>
                 </div>
               )
             })}
@@ -431,6 +392,49 @@ export function KanbanBoard({
         </div>
       )}
     </div>
+  )
+}
+
+const priorityFilterItems = [
+  { value: 'all', label: '전체 우선순위' },
+  { value: 'HIGH', label: '높음' },
+  { value: 'MEDIUM', label: '보통' },
+  { value: 'LOW', label: '낮음' },
+]
+
+const dueFilterItems = [
+  { value: 'all', label: '전체 마감' },
+  { value: 'overdue', label: '초과' },
+  { value: 'dueSoon', label: '임박' },
+  { value: 'later', label: '여유' },
+  { value: 'none', label: '마감 없음' },
+]
+
+function NewTaskDialog({
+  projectId,
+  members,
+  defaultStatus,
+  trigger,
+}: {
+  projectId: string
+  members: Pick<User, 'id' | 'name'>[]
+  defaultStatus?: KanbanStatus
+  trigger: ReactElement
+}) {
+  return (
+    <Dialog>
+      <DialogTrigger render={trigger} />
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>새 태스크</DialogTitle>
+        </DialogHeader>
+        <TaskForm
+          projectId={projectId}
+          members={members}
+          defaultStatus={defaultStatus}
+        />
+      </DialogContent>
+    </Dialog>
   )
 }
 
@@ -443,20 +447,20 @@ function BoardMetric({
   icon: ReactNode
   label: string
   value: string
-  tone?: 'default' | 'danger' | 'warning' | 'muted'
+  tone?: 'default' | 'danger' | 'warning'
 }) {
   return (
-    <div
+    <span
       className={cn(
-        'inline-flex h-7 items-center gap-1.5 rounded-full border bg-background px-2.5 text-xs',
-        tone === 'danger' && 'border-red-200 bg-red-50 text-red-700',
-        tone === 'warning' && 'border-orange-200 bg-orange-50 text-orange-700',
-        tone === 'muted' && 'text-muted-foreground',
+        'inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-xs font-semibold',
+        tone === 'default' && 'text-muted-foreground',
+        tone === 'danger' && 'border-red-200 bg-red-50 text-red-600',
+        tone === 'warning' && 'border-orange-200 bg-orange-50 text-orange-600',
       )}
     >
       {icon}
-      <span>{label}</span>
-      <span className="font-semibold">{value}</span>
-    </div>
+      <span className="font-medium">{label}</span>
+      <span className="tabular-nums">{value}</span>
+    </span>
   )
 }

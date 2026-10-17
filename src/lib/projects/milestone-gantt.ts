@@ -278,6 +278,13 @@ function getIsoWeekNumber(date: Date): number {
   return Math.ceil(((target.getTime() - yearStart.getTime()) / DAY_MS + 1) / 7)
 }
 
+// 월요일 시작 기준으로 그 달의 몇째 주인지 (타임라인 헤더의 "3주" 표기)
+export function getWeekOfMonth(date: Date) {
+  const firstOfMonth = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), 1))
+  const offset = (firstOfMonth.getUTCDay() + 6) % 7
+  return Math.ceil((date.getUTCDate() + offset) / 7)
+}
+
 function formatCompactDate(date: Date): string {
   return new Intl.DateTimeFormat('en-US', {
     timeZone: 'UTC',

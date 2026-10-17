@@ -4,7 +4,9 @@ import { useState, useTransition } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { toast } from 'sonner'
+import { Pencil, UserPlus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { FormActions } from '@/components/form/FormActions'
 import {
   Dialog,
   DialogContent,
@@ -88,9 +90,21 @@ export function UserFormDialog(props: Props) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogTrigger
         render={
-          <Button size={isEdit ? 'sm' : 'default'} variant={isEdit ? 'outline' : 'default'}>
-            {isEdit ? '수정' : '사용자 추가'}
-          </Button>
+          isEdit ? (
+            <Button
+              size="icon-sm"
+              variant="ghost"
+              aria-label={`${user?.name ?? ''} 수정`}
+              title="사용자 수정"
+            >
+              <Pencil />
+            </Button>
+          ) : (
+            <Button size="lg">
+              <UserPlus data-icon="inline-start" />
+              사용자 추가
+            </Button>
+          )
         }
       />
       <DialogContent>
@@ -99,21 +113,23 @@ export function UserFormDialog(props: Props) {
         </DialogHeader>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="name">이름</Label>
+            <Label htmlFor="name" className="font-semibold">이름 *</Label>
             <Input id="name" {...register('name')} />
             {errors.name && (
               <p className="text-sm text-destructive">{errors.name.message}</p>
             )}
           </div>
           <div className="space-y-2">
-            <Label htmlFor="email">이메일</Label>
+            <Label htmlFor="email" className="font-semibold">이메일 *</Label>
             <Input id="email" type="email" {...register('email')} />
             {errors.email && (
               <p className="text-sm text-destructive">{errors.email.message}</p>
             )}
           </div>
           <div className="space-y-2">
-            <Label htmlFor="password">비밀번호</Label>
+            <Label htmlFor="password" className="font-semibold">
+              비밀번호{isEdit ? '' : ' *'}
+            </Label>
             <Input
               id="password"
               type="password"
@@ -126,12 +142,13 @@ export function UserFormDialog(props: Props) {
             )}
           </div>
           <div className="space-y-2">
-            <Label>역할</Label>
+            <Label className="font-semibold">역할 *</Label>
             <Controller
               control={control}
               name="role"
               render={({ field }) => (
                 <Select
+                  items={ROLES.map((r) => ({ value: r, label: ROLE_LABELS[r] }))}
                   value={field.value}
                   onValueChange={(v) => v && field.onChange(v)}
                   disabled={props.mode === 'edit' && props.isSelf}
@@ -151,9 +168,10 @@ export function UserFormDialog(props: Props) {
             />
           </div>
           {error && <p className="text-sm text-destructive">{error}</p>}
-          <Button type="submit" className="w-full" disabled={isPending}>
-            {isPending ? '저장 중...' : isEdit ? '수정' : '추가'}
-          </Button>
+          <FormActions
+            isPending={isPending}
+            submitLabel={isEdit ? '변경사항 저장' : '사용자 추가'}
+          />
         </form>
       </DialogContent>
     </Dialog>

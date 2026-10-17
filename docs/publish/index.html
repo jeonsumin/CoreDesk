@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CoreDesk 디자인 시안</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+<style>
+:root { --bg: #F6F7F9; --ink: #1A1F2B; --ink-2: #5B6272; --line: #E0E3E9; }
+* { box-sizing: border-box; }
+body { word-break: keep-all; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 400 15px/1.6 "Pretendard Variable", Pretendard, system-ui, sans-serif; }
+main { max-width: 1080px; margin: 0 auto; padding: 48px 16px 80px; }
+h1 { font-size: 28px; margin: 0 0 6px; letter-spacing: -0.02em; }
+.intro { color: var(--ink-2); margin: 0 0 32px; max-width: 64ch; }
+.grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+a.card { display: flex; flex-direction: column; background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 22px; text-decoration: none; color: inherit; }
+a.card:hover { border-color: var(--ink); }
+a.card:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+.sw { display: flex; gap: 4px; margin-bottom: 16px; }
+.sw i { width: 22px; height: 22px; border-radius: 4px; }
+h2 { font-size: 19px; margin: 0 0 2px; }
+.for { color: var(--ink-2); font-size: 14px; margin: 0 0 12px; }
+dl { margin: 0; font-size: 14px; }
+dt { font-weight: 600; margin-top: 10px; }
+dd { margin: 0; color: var(--ink-2); }
+@media (max-width: 860px) { .grid { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<main>
+  <h1>CoreDesk 대시보드 시안 3가지</h1>
+  <p class="intro">같은 데이터(프로젝트 5개, 오늘 10/17)를 세 가지 관점으로 다시 그렸습니다. 각 안은 PRD의 세 사용자 중 한 명을 첫 화면의 주인으로 삼습니다.</p>
+  <div class="grid">
+    <a class="card" href="a-runway.html">
+      <div class="sw"><i style="background:#EEF1F4;border:1px solid #D5DBE2"></i><i style="background:#1B2430"></i><i style="background:#2F5BEA"></i><i style="background:#C7841F"></i><i style="background:#CC3B3B"></i></div>
+      <h2>A. 런웨이</h2>
+      <p class="for">PM 김지훈을 위한 관제 화면</p>
+      <dl>
+        <dt>핵심</dt><dd>모든 프로젝트를 한 시간축에 올리고 오늘 선을 긋습니다. 막대 끝과 오늘 선의 거리, 진한 부분의 길이로 위험을 읽습니다.</dd>
+        <dt>레이아웃</dt><dd>64px 아이콘 레일, 가로 폭은 시간축에 양보</dd>
+        <dt>서체</dt><dd>IBM Plex Sans KR</dd>
+        <dt>비용</dt><dd>타임라인 컴포넌트 1개 신규, 나머지는 기존 데이터로 충분</dd>
+      </dl>
+    </a>
+    <a class="card" href="b-focus-queue.html">
+      <div class="sw"><i style="background:#F3F5F2;border:1px solid #DDE3DD"></i><i style="background:#1F2A24"></i><i style="background:#2E6B4F"></i><i style="background:#B07612"></i><i style="background:#B5452F"></i></div>
+      <h2>B. 포커스 큐</h2>
+      <p class="for">개발자 이수민을 위한 작업 화면</p>
+      <dl>
+        <dt>핵심</dt><dd>첫 화면이 "이번 주 끝내야 할 7건"입니다. 행마다 상태 버튼이 있어 확인 팝업 없이 바로 바뀝니다. 직접 눌러 보세요.</dd>
+        <dt>레이아웃</dt><dd>사이드바 + 큐 + 프로젝트 상태 3단</dd>
+        <dt>서체</dt><dd>Pretendard (큰 숫자는 800 굵기)</dd>
+        <dt>비용</dt><dd>현재 my-tasks 화면을 홈으로 승격하는 수준, 가장 작음</dd>
+      </dl>
+    </a>
+    <a class="card" href="c-briefing.html">
+      <div class="sw"><i style="background:#F5F6F8;border:1px solid #E1E4EC"></i><i style="background:#1A1F36"></i><i style="background:#3B3FB6"></i><i style="background:#D9472F"></i><i style="background:#2F8F5B"></i></div>
+      <h2>C. 주간 브리핑</h2>
+      <p class="for">경영진 박성호를 위한 읽기 화면</p>
+      <dl>
+        <dt>핵심</dt><dd>첫 문장이 결론입니다. "5개 중 2개는 결정이 필요합니다" 아래에 근거와 추세 차트, PM 제안을 붙입니다.</dd>
+        <dt>레이아웃</dt><dd>상단 내비, 사이드바 없는 문서형 단일 칼럼</dd>
+        <dt>서체</dt><dd>Noto Serif KR(제목) + Pretendard(본문)</dd>
+        <dt>비용</dt><dd>요약 문장 생성, 주간 진행률 스냅샷 저장이 필요해 가장 큼</dd>
+      </dl>
+    </a>
+  </div>
+</main>
+</body>
+</html>

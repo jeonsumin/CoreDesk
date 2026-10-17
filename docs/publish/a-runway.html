@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CoreDesk 런웨이</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* A안 — 런웨이: 모든 프로젝트를 하나의 시간축 위에 올려 "오늘 선"과 마감의 거리로 위험을 읽게 한다 */
+:root {
+  --paper: #EEF1F4;
+  --surface: #FFFFFF;
+  --ink: #1B2430;
+  --ink-2: #5A6573;
+  --line: #D5DBE2;
+  --signal: #2F5BEA;
+  --signal-soft: #DCE4FD;
+  --amber: #C7841F;
+  --amber-soft: #FBEBD2;
+  --red: #CC3B3B;
+  --red-soft: #F8DADA;
+  --rail: #1B2430;
+  --radius: 6px;
+}
+* { box-sizing: border-box; }
+body { word-break: keep-all; }
+body {
+  margin: 0; background: var(--paper); color: var(--ink);
+  font: 400 14px/1.55 "IBM Plex Sans KR", "Pretendard Variable", system-ui, sans-serif;
+}
+a { color: inherit; }
+:focus-visible { outline: 2px solid var(--signal); outline-offset: 2px; }
+
+.app { display: grid; grid-template-columns: 64px 1fr; min-height: 100vh; }
+
+/* 아이콘 레일 — 메뉴는 툴팁으로, 화면 폭은 시간축에 양보 */
+.rail { background: var(--rail); display: flex; flex-direction: column; align-items: center; padding: 14px 0; gap: 6px; }
+.rail .logo { width: 34px; height: 34px; border-radius: 8px; background: var(--signal); color: #fff; display: grid; place-items: center; font-weight: 700; margin-bottom: 14px; }
+.rail a { width: 40px; height: 40px; border-radius: 8px; display: grid; place-items: center; color: #8D99A8; text-decoration: none; position: relative; }
+.rail a[aria-current] { background: #2C3848; color: #fff; }
+.rail a:hover { color: #fff; }
+.rail svg { width: 20px; height: 20px; }
+.rail a span { position: absolute; left: 50px; background: var(--ink); color: #fff; font-size: 12px; padding: 4px 8px; border-radius: 4px; white-space: nowrap; opacity: 0; pointer-events: none; }
+.rail a:hover span, .rail a:focus-visible span { opacity: 1; }
+
+main { padding: 20px 28px 40px; min-width: 0; }
+.top { display: flex; align-items: center; gap: 16px; margin-bottom: 20px; }
+.top h1 { font-size: 20px; font-weight: 600; margin: 0; }
+.top .date { color: var(--ink-2); }
+.top .search { margin-left: auto; width: 280px; height: 36px; border: 1px solid var(--line); background: var(--surface); border-radius: var(--radius); padding: 0 12px; font: inherit; }
+.btn { height: 36px; padding: 0 14px; border-radius: var(--radius); border: 1px solid var(--signal); background: var(--signal); color: #fff; font: 500 14px/1 inherit; font-family: inherit; cursor: pointer; }
+
+/* 런웨이 */
+.runway { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 20px 24px 12px; }
+.runway header { display: flex; align-items: baseline; gap: 12px; margin-bottom: 16px; }
+.runway h2 { margin: 0; font-size: 16px; font-weight: 600; }
+.runway header p { margin: 0; color: var(--ink-2); }
+.legend { margin-left: auto; display: flex; gap: 14px; color: var(--ink-2); font-size: 12px; }
+.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 6px; vertical-align: -1px; }
+
+.track-head, .row { display: grid; grid-template-columns: 220px 1fr 92px; align-items: center; gap: 16px; }
+.track-head { color: var(--ink-2); font-size: 12px; height: 28px; }
+.months { position: relative; height: 100%; }
+.months span { position: absolute; top: 6px; transform: translateX(4px); }
+.months span::before { content: ""; position: absolute; left: -4px; top: 22px; height: 300px; border-left: 1px dashed var(--line); }
+
+.lanes { position: relative; }
+.today { position: absolute; top: -4px; bottom: -4px; width: 2px; background: var(--ink); z-index: 2; pointer-events: none; }
+.today b { position: absolute; top: -26px; left: 50%; transform: translateX(-50%); background: var(--ink); color: #fff; font-size: 11px; font-weight: 500; padding: 2px 6px; border-radius: 4px; white-space: nowrap; }
+
+.row { height: 60px; border-top: 1px solid #EDF0F3; text-decoration: none; }
+.row:hover { background: #F7F9FB; }
+.row .name { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.row .name small { display: block; font-weight: 400; color: var(--ink-2); font-size: 12px; }
+.bar-area { position: relative; height: 22px; }
+.bar { position: absolute; left: var(--s); width: calc(var(--e) - var(--s)); height: 100%; background: var(--signal-soft); border-radius: 4px; overflow: hidden; }
+.bar::before { content: ""; position: absolute; inset: 0 auto 0 0; width: var(--p); background: var(--signal); }
+.bar em { position: relative; font-style: normal; font-size: 12px; font-weight: 600; color: #fff; padding-left: 8px; line-height: 22px; }
+.row.warn .bar { background: var(--amber-soft); } .row.warn .bar::before { background: var(--amber); }
+.row.risk .bar { background: var(--red-soft); } .row.risk .bar::before { background: var(--red); }
+.row.over .bar { background: var(--red-soft); outline: 2px solid var(--red); outline-offset: -2px; } .row.over .bar::before { background: var(--red); }
+.row.clip .bar { border-top-left-radius: 0; border-bottom-left-radius: 0; }
+
+.dday { justify-self: end; font-size: 13px; font-weight: 600; padding: 3px 8px; border-radius: 4px; color: var(--ink-2); }
+.warn .dday { background: var(--amber-soft); color: #8A5A10; }
+.risk .dday, .over .dday { background: var(--red-soft); color: #9B2424; }
+
+/* 아래 3열 */
+.below { display: grid; grid-template-columns: 1.3fr 1fr 1fr; gap: 16px; margin-top: 16px; }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px 18px; }
+.panel h3 { margin: 0 0 10px; font-size: 15px; font-weight: 600; display: flex; justify-content: space-between; }
+.panel h3 a { font-weight: 400; font-size: 13px; color: var(--signal); text-decoration: none; }
+.list { list-style: none; margin: 0; padding: 0; }
+.list li { display: grid; grid-template-columns: 1fr auto; gap: 2px 12px; padding: 10px 0; border-top: 1px solid #EDF0F3; }
+.list li:first-child { border-top: 0; }
+.list .meta { color: var(--ink-2); font-size: 12px; grid-column: 1; }
+.list .d { grid-row: 1 / span 2; grid-column: 2; align-self: center; font-size: 12px; font-weight: 600; }
+.d.red { color: var(--red); } .d.amber { color: var(--amber); }
+.list li.ms { display: flex; gap: 10px; align-items: center; }
+.ms i { width: 10px; height: 10px; transform: rotate(45deg); border: 2px solid var(--ink); flex: none; }
+.ms i.done { background: var(--ink); }
+
+@media (max-width: 1080px) { .below { grid-template-columns: 1fr; } }
+@media (max-width: 720px) {
+  .app { grid-template-columns: 1fr; }
+  .rail { flex-direction: row; padding: 8px 16px; position: sticky; top: 0; z-index: 5; justify-content: space-between; }
+  .rail .logo { margin: 0; }
+  .rail a span { display: none; }
+  main { padding: 16px; }
+  .top { flex-wrap: wrap; } .top .search { width: 100%; margin: 0; order: 3; }
+  .runway { padding: 16px 12px 8px; overflow-x: auto; }
+  .runway .inner { min-width: 640px; }
+  .track-head, .row { grid-template-columns: 140px 1fr 72px; gap: 10px; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <nav class="rail" aria-label="주 메뉴">
+    <div class="logo" aria-hidden="true">C</div>
+    <a href="#" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg><span>대시보드</span></a>
+    <a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M8 4v16M3 10h5"/></svg><span>프로젝트 관리</span></a>
+    <a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M9 7V4h6v3"/></svg><span>포트폴리오 관리</span></a>
+    <a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 3h10l4 4v14H5z"/><path d="M9 11h6M9 15h6"/></svg><span>메모</span></a>
+    <a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 7h6l2 2h10v10H3z"/></svg><span>드라이브</span></a>
+  </nav>
+
+  <main>
+    <div class="top">
+      <h1>프로젝트 운영 현황</h1>
+      <span class="date">10월 17일 토요일</span>
+      <input class="search" type="search" placeholder="프로젝트, 태스크 검색" aria-label="검색">
+      <button class="btn" type="button">프로젝트 만들기</button>
+    </div>
+
+    <section class="runway" aria-labelledby="rw">
+      <header>
+        <h2 id="rw">런웨이</h2>
+        <p>오늘 선과 막대 끝 사이가 남은 시간, 진한 부분이 진행률입니다</p>
+        <div class="legend"><span><i style="background:var(--signal)"></i>순항</span><span><i style="background:var(--amber)"></i>D-3 이내</span><span><i style="background:var(--red)"></i>위험·초과</span></div>
+      </header>
+      <div class="inner">
+        <div class="track-head">
+          <span>프로젝트</span>
+          <div class="months"><span style="left:0">9월</span><span style="left:24.6%">10월</span><span style="left:50%">11월</span><span style="left:74.6%">12월</span></div>
+          <span style="text-align:right">마감</span>
+        </div>
+        <div class="lanes">
+          <a href="#" class="row over clip">
+            <span class="name">사내 메신저 연동<small>PM 김지훈, 태스크 19개</small></span>
+            <div class="bar-area"><div class="bar" style="--s:0%;--e:35.2%;--p:74%"><em>74%</em></div></div>
+            <span class="dday">D+3 초과</span>
+          </a>
+          <a href="#" class="row risk">
+            <span class="name">고객 포털 리뉴얼<small>PM 김지훈, 태스크 31개</small></span>
+            <div class="bar-area"><div class="bar" style="--s:0%;--e:41.8%;--p:42%"><em>42%</em></div></div>
+            <span class="dday">D-5</span>
+          </a>
+          <a href="#" class="row warn">
+            <span class="name">데이터 파이프라인 이관<small>PM 정다은, 태스크 16개</small></span>
+            <div class="bar-area"><div class="bar" style="--s:5.7%;--e:39.3%;--p:88%"><em>88%</em></div></div>
+            <span class="dday">D-2</span>
+          </a>
+          <a href="#" class="row">
+            <span class="name">결제 모듈 v2<small>PM 김지훈, 태스크 44개</small></span>
+            <div class="bar-area"><div class="bar" style="--s:11.5%;--e:73.8%;--p:61%"><em>61%</em></div></div>
+            <span class="dday">D-44</span>
+          </a>
+          <a href="#" class="row">
+            <span class="name">모바일 앱 3.0<small>PM 한유진, 태스크 52개</small></span>
+            <div class="bar-area"><div class="bar" style="--s:24.6%;--e:90.2%;--p:18%"><em>18%</em></div></div>
+            <span class="dday">D-64</span>
+          </a>
+          <div class="today" style="left:calc(220px + 16px + (100% - 220px - 92px - 32px) * .377)"><b>오늘 10/17</b></div>
+        </div>
+      </div>
+    </section>
+
+    <div class="below">
+      <section class="panel">
+        <h3>내 마감 큐 <a href="#">내 태스크 전체</a></h3>
+        <ul class="list">
+          <li><span>푸시 알림 토큰 갱신 로직</span><span class="meta">사내 메신저 연동</span><span class="d red">D+3</span></li>
+          <li><span>로그인 화면 접근성 점검</span><span class="meta">고객 포털 리뉴얼</span><span class="d red">오늘</span></li>
+          <li><span>S3 버킷 권한 이전</span><span class="meta">데이터 파이프라인 이관</span><span class="d amber">D-2</span></li>
+          <li><span>환불 API 에러 코드 정리</span><span class="meta">결제 모듈 v2</span><span class="d">D-6</span></li>
+        </ul>
+      </section>
+      <section class="panel">
+        <h3>다가오는 마일스톤</h3>
+        <ul class="list">
+          <li class="ms"><i class="done"></i><span>메신저 연동 베타 배포 <span class="meta">10/14 완료</span></span></li>
+          <li class="ms"><i></i><span>파이프라인 데이터 검증 <span class="meta">10/19</span></span></li>
+          <li class="ms"><i></i><span>포털 사용자 테스트 <span class="meta">10/22</span></span></li>
+          <li class="ms"><i></i><span>결제 PG 연동 심사 <span class="meta">11/05</span></span></li>
+        </ul>
+      </section>
+      <section class="panel">
+        <h3>최근 변경</h3>
+        <ul class="list">
+          <li><span>이수민 님이 <b>검색 인덱스 재구축</b>을 완료했습니다</span><span class="meta">12분 전</span></li>
+          <li><span>정다은 님이 마감일을 10/19로 옮겼습니다</span><span class="meta">1시간 전</span></li>
+          <li><span>한유진 님이 태스크 6개를 추가했습니다</span><span class="meta">어제</span></li>
+        </ul>
+      </section>
+    </div>
+  </main>
+</div>
+</body>
+</html>

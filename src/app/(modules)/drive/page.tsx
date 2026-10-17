@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { Panel, PanelToolbar } from '@/components/layout/Panel'
 import { DriveHeader } from './_components/DriveHeader'
 import { DriveGrid } from './_components/DriveGrid'
 import { DriveBreadcrumb } from './_components/DriveBreadcrumb'
@@ -51,10 +52,19 @@ export default async function DrivePage({
   ])
 
   return (
-    <div className="space-y-4">
+    <div className="flex h-full min-h-0 flex-col gap-6">
       <DriveHeader folderId={folderId} />
-      <DriveBreadcrumb breadcrumb={breadcrumb} />
-      <DriveGrid files={files} folders={folders} />
+      <Panel className="flex-1">
+        <PanelToolbar className="justify-between">
+          <DriveBreadcrumb breadcrumb={breadcrumb} />
+          <span className="shrink-0 text-xs text-muted-foreground tabular-nums">
+            폴더 {folders.length} · 파일 {files.length}
+          </span>
+        </PanelToolbar>
+        <div className="min-h-0 flex-1 overflow-auto p-4">
+          <DriveGrid files={files} folders={folders} />
+        </div>
+      </Panel>
     </div>
   )
 }

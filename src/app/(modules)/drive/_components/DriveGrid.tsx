@@ -1,7 +1,11 @@
 'use client'
 
 import { useState } from 'react'
-import { FolderOpen } from 'lucide-react'
+import { FolderOpen, Upload } from 'lucide-react'
+import { buttonVariants } from '@/components/ui/button'
+import { EmptyState } from '@/components/layout/Panel'
+import { cn } from '@/lib/utils'
+import { DRIVE_UPLOAD_INPUT_ID } from './DriveHeader'
 import { FileCard } from './FileCard'
 import { FolderCard } from './FolderCard'
 import { PreviewModal } from './PreviewModal'
@@ -20,19 +24,26 @@ export function DriveGrid({ files, folders }: Props) {
 
   if (isEmpty) {
     return (
-      <div className="rounded-lg border border-dashed p-12 text-center">
-        <FolderOpen size={40} className="mx-auto text-muted-foreground mb-3" />
-        <p className="text-sm font-medium">이 폴더가 비어 있습니다</p>
-        <p className="text-xs text-muted-foreground mt-1">
-          &ldquo;파일 업로드&rdquo; 버튼이나 &ldquo;새 폴더&rdquo; 버튼으로 시작하세요.
-        </p>
-      </div>
+      <EmptyState
+        icon={<FolderOpen />}
+        title="이 폴더가 비어 있습니다"
+        description="파일을 끌어다 놓거나 업로드해서 시작하세요."
+        action={
+          <label
+            htmlFor={DRIVE_UPLOAD_INPUT_ID}
+            className={cn(buttonVariants(), 'cursor-pointer')}
+          >
+            <Upload data-icon="inline-start" />
+            파일 업로드
+          </label>
+        }
+      />
     )
   }
 
   return (
     <>
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
         {folders.map((folder) => (
           <FolderCard key={folder.id} folder={folder} />
         ))}

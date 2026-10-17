@@ -5,6 +5,8 @@ import { Plus, Pencil, Trash2, KeyRound } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { FormActions } from '@/components/form/FormActions'
+import { EmptyState as EmptyStateBase } from '@/components/layout/Panel'
 import { Textarea } from '@/components/ui/textarea'
 import {
   Dialog,
@@ -50,7 +52,7 @@ export function AccountSection({ initialItems, projectId, canManage }: Props) {
       {canManage && (
         <div className="flex justify-end">
           <Button size="sm" onClick={openCreate}>
-            <Plus size={14} />
+            <Plus data-icon="inline-start" />
             계정 추가
           </Button>
         </div>
@@ -59,10 +61,10 @@ export function AccountSection({ initialItems, projectId, canManage }: Props) {
       {initialItems.length === 0 ? (
         <EmptyState canManage={canManage} onAdd={openCreate} />
       ) : (
-        <div className="rounded-lg border overflow-x-auto">
+        <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="bg-muted/50 text-xs font-medium text-muted-foreground">
+              <tr className="border-b bg-muted/50 text-xs font-medium text-muted-foreground">
                 <th className="text-left px-3 py-2 whitespace-nowrap">구분</th>
                 <th className="text-left px-3 py-2 whitespace-nowrap">IP</th>
                 <th className="text-left px-3 py-2 whitespace-nowrap">ID</th>
@@ -75,7 +77,7 @@ export function AccountSection({ initialItems, projectId, canManage }: Props) {
               {initialItems.map((item) => (
                 <tr
                   key={item.id}
-                  className="border-t hover:bg-muted/20 group transition-colors"
+                  className="group border-b transition-colors last:border-b-0 hover:bg-muted/50"
                 >
                   <td className="px-3 py-2 align-top">
                     <TagChips tags={toStringArray(item.tags)} />
@@ -99,6 +101,7 @@ export function AccountSection({ initialItems, projectId, canManage }: Props) {
                           onClick={() => openEdit(item)}
                           className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
                           aria-label="수정"
+                          title="수정"
                         >
                           <Pencil size={13} />
                         </button>
@@ -106,6 +109,7 @@ export function AccountSection({ initialItems, projectId, canManage }: Props) {
                           onClick={() => handleDelete(item.id)}
                           className="p-1.5 rounded text-muted-foreground hover:text-destructive hover:bg-muted transition-colors"
                           aria-label="삭제"
+                          title="삭제"
                         >
                           <Trash2 size={13} />
                         </button>
@@ -145,22 +149,19 @@ function EmptyState({
   onAdd: () => void
 }) {
   return (
-    <div className="rounded-lg border border-dashed py-12 px-6 flex flex-col items-center justify-center text-center gap-3">
-      <div className="rounded-full bg-muted p-3">
-        <KeyRound size={20} className="text-muted-foreground" />
-      </div>
-      <div>
-        <p className="text-sm font-medium">등록된 계정이 없습니다</p>
-        <p className="text-xs text-muted-foreground mt-1">
-          서버·VM 등 SSH 계정 정보를 등록해 관리하세요.
-        </p>
-      </div>
-      {canManage && (
-        <Button size="sm" onClick={onAdd}>
-          <Plus size={14} />첫 계정 추가하기
-        </Button>
-      )}
-    </div>
+    <EmptyStateBase
+      icon={<KeyRound />}
+      title="등록된 계정이 없습니다"
+      description="서버·VM 등 SSH 계정 정보를 등록해 관리하세요."
+      action={
+        canManage && (
+          <Button onClick={onAdd}>
+            <Plus data-icon="inline-start" />
+            첫 계정 추가하기
+          </Button>
+        )
+      }
+    />
   )
 }
 
@@ -192,12 +193,12 @@ function AccountForm({
   return (
     <form action={handleAction} className="space-y-4">
       <div className="space-y-2">
-        <Label htmlFor="acc-tags">구분</Label>
+        <Label className="font-semibold" htmlFor="acc-tags">구분</Label>
         <TagInput name="tags" defaultValue={toStringArray(item?.tags)} />
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="acc-ip">IP *</Label>
+        <Label className="font-semibold" htmlFor="acc-ip">IP *</Label>
         <Input
           id="acc-ip"
           name="ip"
@@ -209,7 +210,7 @@ function AccountForm({
 
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-2">
-          <Label htmlFor="acc-username">ID *</Label>
+          <Label className="font-semibold" htmlFor="acc-username">ID *</Label>
           <Input
             id="acc-username"
             name="username"
@@ -219,7 +220,7 @@ function AccountForm({
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="acc-password">PW</Label>
+          <Label className="font-semibold" htmlFor="acc-password">PW</Label>
           <PasswordInput
             id="acc-password"
             name="password"
@@ -230,7 +231,7 @@ function AccountForm({
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="acc-note">비고</Label>
+        <Label className="font-semibold" htmlFor="acc-note">비고</Label>
         <Textarea
           id="acc-note"
           name="note"
@@ -242,9 +243,10 @@ function AccountForm({
 
       {error && <p className="text-sm text-destructive">{error}</p>}
 
-      <Button type="submit" className="w-full" disabled={isPending}>
-        {isPending ? '저장 중...' : item ? '수정' : '추가'}
-      </Button>
+      <FormActions
+        isPending={isPending}
+        submitLabel={item ? '변경사항 저장' : '계정 추가'}
+      />
     </form>
   )
 }

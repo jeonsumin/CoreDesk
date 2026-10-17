@@ -1,7 +1,7 @@
 'use client'
 
 import { useTransition } from 'react'
-import { Button } from '@/components/ui/button'
+import { FormActions } from '@/components/form/FormActions'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
@@ -12,6 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { projectStatusLabel } from '@/lib/projects/appearance'
 import { createProject, updateProject } from '../_actions/project'
 import type { Project } from '@/types'
 
@@ -59,7 +60,11 @@ export function ProjectForm({ project, onSuccess }: ProjectFormProps) {
       </div>
       <div className="space-y-2">
         <Label htmlFor="status">상태</Label>
-        <Select name="status" defaultValue={project?.status ?? 'IN_PROGRESS'}>
+        <Select
+          name="status"
+          defaultValue={project?.status ?? 'IN_PROGRESS'}
+          items={projectStatusLabel}
+        >
           <SelectTrigger id="status">
             <SelectValue />
           </SelectTrigger>
@@ -91,9 +96,11 @@ export function ProjectForm({ project, onSuccess }: ProjectFormProps) {
           />
         </div>
       </div>
-      <Button type="submit" className="w-full" disabled={isPending}>
-        {isPending ? '저장 중...' : project ? '수정하기' : '프로젝트 생성'}
-      </Button>
+      <FormActions
+        isPending={isPending}
+        submitLabel={project ? '변경사항 저장' : '프로젝트 만들기'}
+        cancelHref={project ? `/projects/${project.id}` : '/projects'}
+      />
     </form>
   )
 }

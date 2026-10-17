@@ -13,33 +13,25 @@ export const KANBAN_COLUMNS = [
     status: 'TODO',
     label: '할 일',
     description: '착수 전',
-    accentClassName: 'border-t-zinc-400',
-    softClassName: 'bg-zinc-50/70',
-    textClassName: 'text-zinc-700',
+    dotClassName: 'bg-zinc-400',
   },
   {
     status: 'IN_PROGRESS',
     label: '진행 중',
     description: '작업 중',
-    accentClassName: 'border-t-blue-500',
-    softClassName: 'bg-blue-50/60',
-    textClassName: 'text-blue-700',
+    dotClassName: 'bg-blue-500',
   },
   {
     status: 'REVIEW',
     label: '검토',
     description: '확인 필요',
-    accentClassName: 'border-t-violet-500',
-    softClassName: 'bg-violet-50/50',
-    textClassName: 'text-violet-700',
+    dotClassName: 'bg-orange-500',
   },
   {
     status: 'DONE',
     label: '완료',
     description: '종료됨',
-    accentClassName: 'border-t-emerald-500',
-    softClassName: 'bg-emerald-50/50',
-    textClassName: 'text-emerald-700',
+    dotClassName: 'bg-green-500',
   },
 ] as const satisfies readonly KanbanColumnDefinition[]
 
@@ -89,9 +81,7 @@ export type KanbanColumnDefinition = {
   status: KanbanStatus
   label: string
   description: string
-  accentClassName: string
-  softClassName: string
-  textClassName: string
+  dotClassName: string
 }
 
 export type KanbanColumnModel<TTask extends KanbanTaskInput = KanbanTaskInput> =

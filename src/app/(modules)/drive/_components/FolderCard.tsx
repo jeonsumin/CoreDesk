@@ -70,29 +70,29 @@ export function FolderCard({ folder }: Props) {
     <>
       <div
         onClick={handleNavigate}
-        className="group relative rounded-lg border border-border bg-card p-3 hover:shadow-md hover:border-primary/50 transition-all cursor-pointer flex flex-col"
+        className="group relative flex cursor-pointer flex-col rounded-xl border bg-card p-3 shadow-sm transition-shadow hover:shadow-md"
       >
-        <div className="aspect-square flex items-center justify-center rounded-md bg-amber-50 dark:bg-amber-950/30 mb-2.5">
-          <Folder size={40} className="text-amber-400 fill-amber-400/20" />
+        <div className="mb-3 flex aspect-square items-center justify-center rounded-lg bg-muted/60">
+          <Folder className="size-10 fill-amber-400/20 text-amber-400" />
         </div>
 
         <div className="flex items-start gap-1 min-w-0">
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium truncate" title={folder.name}>
+            <p className="truncate text-sm font-semibold" title={folder.name}>
               {folder.name}
             </p>
-            <p className="text-xs text-muted-foreground mt-0.5">
+            <p className="mt-0.5 truncate text-xs text-muted-foreground">
               {itemCount > 0 ? `항목 ${itemCount}개` : '비어 있음'} · {formatDate(folder.createdAt)}
             </p>
           </div>
           <div
             onClick={(e) => e.stopPropagation()}
-            className="opacity-0 group-hover:opacity-100 transition-opacity"
+            className="opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100"
           >
             <DropdownMenu>
               <DropdownMenuTrigger
                 render={
-                  <Button variant="ghost" size="icon-sm" aria-label="더보기">
+                  <Button variant="ghost" size="icon-sm" aria-label="더보기" title="더보기">
                     <MoreVertical size={14} />
                   </Button>
                 }

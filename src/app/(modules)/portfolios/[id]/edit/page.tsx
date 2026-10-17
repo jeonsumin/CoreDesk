@@ -1,8 +1,6 @@
-import Link from 'next/link'
 import { notFound, redirect } from 'next/navigation'
-import { ArrowLeft } from 'lucide-react'
-import { buttonVariants } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Pencil } from 'lucide-react'
+import { FormPanel } from '@/components/layout/FormPanel'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { PortfolioForm } from '../../_components/PortfolioForm'
@@ -32,29 +30,12 @@ export default async function EditPortfolioPage({ params }: Props) {
   if (!portfolio) notFound()
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6">
-      <div className="flex items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold">포트폴리오 수정</h1>
-          <p className="text-muted-foreground">{portfolio.title}</p>
-        </div>
-        <Link
-          href={`/portfolios/${portfolio.id}`}
-          className={buttonVariants({ variant: 'outline' })}
-        >
-          <ArrowLeft size={14} />
-          상세
-        </Link>
-      </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>포트폴리오 정보</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <PortfolioForm portfolio={portfolio} />
-        </CardContent>
-      </Card>
-    </div>
+    <FormPanel
+      icon={<Pencil />}
+      title="포트폴리오 수정"
+      description={`'${portfolio.title}'의 정보를 수정합니다.`}
+    >
+      <PortfolioForm portfolio={portfolio} />
+    </FormPanel>
   )
 }

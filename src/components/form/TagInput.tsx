@@ -53,7 +53,7 @@ export function TagInput({
   return (
     <div
       className={cn(
-        'flex min-h-9 flex-wrap items-center gap-1.5 rounded-md border border-input bg-background px-2 py-1.5 text-sm transition-colors focus-within:border-ring focus-within:ring-2 focus-within:ring-ring',
+        'flex min-h-9 flex-wrap items-center gap-1.5 rounded-lg border border-input bg-background px-2 py-1.5 text-sm transition-colors focus-within:border-primary focus-within:ring-3 focus-within:ring-primary/20',
         className,
       )}
       onClick={() => inputRef.current?.focus()}
@@ -61,7 +61,7 @@ export function TagInput({
       {tags.map((tag, index) => (
         <span
           key={`${tag}-${index}`}
-          className="inline-flex items-center gap-1 rounded-full bg-primary/10 py-0.5 pl-2.5 pr-1 text-xs font-medium text-primary"
+          className="inline-flex items-center gap-1 rounded-full border border-primary/40 py-0.5 pr-1 pl-2 text-xs text-primary"
         >
           {tag}
           <button
@@ -70,7 +70,7 @@ export function TagInput({
               event.stopPropagation()
               removeTag(index)
             }}
-            className="rounded-full p-0.5 transition-colors hover:bg-primary/20"
+            className="rounded-full p-0.5 transition-colors hover:bg-primary/10"
             aria-label={`태그 ${tag} 제거`}
           >
             <X size={10} strokeWidth={2.5} />

@@ -95,10 +95,10 @@ function blockTextareaClassName(type: BlockType): string {
   if (type === 'h2') return 'text-2xl font-semibold leading-tight'
   if (type === 'h3') return 'text-xl font-semibold leading-snug'
   if (type === 'quote') {
-    return 'border-l-2 border-border pl-3 text-muted-foreground'
+    return 'border-l-2 border-primary/40 pl-3 text-muted-foreground'
   }
   if (type === 'code') {
-    return 'rounded-md bg-muted px-3 py-2 font-mono text-sm leading-6'
+    return 'rounded-lg bg-muted px-3 py-2 font-mono text-sm leading-6'
   }
   return 'text-base leading-7'
 }
@@ -277,7 +277,7 @@ export function BlockEditor({ content, onChange }: Props) {
   }
 
   return (
-    <div className="rounded-lg border bg-background px-3 py-4 md:px-6 md:py-5">
+    <div className="min-h-80 rounded-lg border border-input bg-background px-2 py-4 transition-colors focus-within:border-primary focus-within:ring-3 focus-within:ring-primary/20 md:px-4 md:py-5">
       <div className="space-y-1">
         {blocks.map((block, index) => {
           const isActive = activeBlockId === block.id
@@ -288,12 +288,13 @@ export function BlockEditor({ content, onChange }: Props) {
               key={block.id}
               className={cn(
                 'group relative flex gap-2 rounded-lg px-2 py-1.5 transition-colors',
-                isActive && 'bg-muted/60 ring-1 ring-ring/15',
+                isActive && 'bg-muted/50',
               )}
             >
               <button
                 type="button"
                 aria-label="블록 메뉴"
+                title="블록 메뉴"
                 className="mt-1.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-muted-foreground opacity-0 transition-opacity hover:bg-muted hover:text-foreground group-hover:opacity-100"
               >
                 <GripVertical size={15} />
@@ -342,7 +343,7 @@ export function BlockEditor({ content, onChange }: Props) {
                 />
 
                 {isSlashOpen && (
-                  <div className="absolute left-0 top-full z-20 mt-2 w-60 overflow-hidden rounded-lg border bg-popover p-1 shadow-lg">
+                  <div className="absolute left-0 top-full z-20 mt-2 w-60 overflow-hidden rounded-xl border bg-popover p-1 shadow-lg">
                     {slashCommands.map((command, commandIndex) => {
                       const Icon = command.icon
                       const isSelected = slashState.selectedIndex === commandIndex
@@ -354,9 +355,9 @@ export function BlockEditor({ content, onChange }: Props) {
                           onMouseDown={(event) => event.preventDefault()}
                           onClick={() => applySlashCommand(block.id, command.type)}
                           className={cn(
-                            'flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-sm transition-colors',
+                            'flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-sm transition-colors',
                             isSelected
-                              ? 'bg-muted text-foreground'
+                              ? 'bg-primary/10 text-primary'
                               : 'text-muted-foreground hover:bg-muted hover:text-foreground',
                           )}
                         >

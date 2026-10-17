@@ -1,5 +1,6 @@
 import Link from 'next/link'
-import { Badge } from '@/components/ui/badge'
+import { ProgressBar } from '@/components/layout/StatCard'
+import { projectColor, projectStatusLabel } from '@/lib/projects/appearance'
 import { cn } from '@/lib/utils'
 import type { Project, Task } from '@/types'
 
@@ -8,18 +9,11 @@ type Props = {
   nowMs: number
 }
 
-const statusLabel: Record<string, string> = {
-  IN_PROGRESS: '진행 중',
-  COMPLETED: '완료',
-  ON_HOLD: '보류',
-  CANCELLED: '취소',
-}
-
-const statusVariant: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {
-  IN_PROGRESS: 'default',
-  COMPLETED: 'secondary',
-  ON_HOLD: 'outline',
-  CANCELLED: 'destructive',
+const statusBadgeClass: Record<string, string> = {
+  IN_PROGRESS: 'border-blue-200 bg-blue-50 text-blue-700',
+  COMPLETED: 'border-green-200 bg-green-50 text-green-700',
+  ON_HOLD: 'border-border bg-muted text-muted-foreground',
+  CANCELLED: 'border-red-200 bg-red-50 text-red-600',
 }
 
 export function ProjectSummaryCard({ project, nowMs }: Props) {
@@ -31,66 +25,64 @@ export function ProjectSummaryCard({ project, nowMs }: Props) {
     ? Math.ceil((new Date(project.endDate).getTime() - nowMs) / 86400000)
     : null
 
-  const isRisk = daysLeft !== null && daysLeft <= 7 && progress < 50
-  const progressTone = isRisk
-    ? 'bg-orange-500'
-    : progress === 100
-      ? 'bg-emerald-500'
-      : 'bg-primary'
-
   return (
     <Link
       href={`/projects/${project.id}`}
-      className={cn(
-        'grid grid-cols-[minmax(220px,1.3fr)_120px_160px_110px] gap-3 border-b px-4 py-3 transition-colors hover:bg-muted/40',
-        isRisk && 'bg-orange-50/60 hover:bg-orange-50',
-      )}
+      className="grid grid-cols-[minmax(220px,1.3fr)_120px_160px_110px] items-center gap-3 border-b px-4 py-3 transition-colors last:border-b-0 hover:bg-muted/50"
     >
-      <div className="min-w-0">
-        <p className="truncate text-sm font-medium">{project.name}</p>
-        <p className="mt-1 truncate text-xs text-muted-foreground">
-          {project.description || `${done}/${total} 태스크 완료`}
-        </p>
+      <div className="flex min-w-0 items-center gap-3">
+        <span
+          className={cn(
+            'flex size-8 shrink-0 items-center justify-center rounded-lg text-sm font-bold text-white',
+            projectColor(project.id),
+          )}
+          aria-hidden
+        >
+          {project.name.charAt(0)}
+        </span>
+        <div className="min-w-0">
+          <p className="truncate text-sm font-semibold">{project.name}</p>
+          <p className="mt-0.5 truncate text-xs text-muted-foreground">
+            {project.description || `${done}/${total} 태스크 완료`}
+          </p>
+        </div>
       </div>
 
-      <div className="flex items-center">
-        <Badge variant={statusVariant[project.status]} className="text-xs">
-          {statusLabel[project.status]}
-        </Badge>
+      <div>
+        <span
+          className={cn(
+            'rounded-md border px-2 py-0.5 text-xs font-semibold',
+            statusBadgeClass[project.status],
+          )}
+        >
+          {projectStatusLabel[project.status]}
+        </span>
       </div>
 
-      <div className="flex flex-col justify-center gap-1">
-        <div className="flex items-center justify-between text-xs">
+      <div className="flex flex-col gap-1">
+        <div className="flex items-center justify-between text-xs tabular-nums">
           <span className="text-muted-foreground">
             {done}/{total}
           </span>
-          <span className="font-medium">{progress}%</span>
+          <span className="font-semibold">{progress}%</span>
         </div>
-        <div className="h-1.5 overflow-hidden rounded-full bg-muted">
-          <div
-            className={cn('h-full transition-all', progressTone)}
-            style={{ width: `${progress}%` }}
-          />
-        </div>
+        <ProgressBar value={progress} className="h-1.5" />
       </div>
 
-      <div
-        className={cn(
-          'flex items-center text-xs text-muted-foreground',
-          daysLeft !== null &&
-            daysLeft < 0 &&
-            'font-medium text-destructive',
-          daysLeft !== null &&
-            daysLeft >= 0 &&
-            daysLeft <= 7 &&
-            'font-medium text-orange-600',
+      <div className="text-xs">
+        {daysLeft === null ? (
+          <span className="text-muted-foreground">미지정</span>
+        ) : daysLeft < 0 ? (
+          <span className="rounded-md border border-red-200 bg-red-50 px-2 py-0.5 font-semibold text-red-600">
+            D+{Math.abs(daysLeft)} 초과
+          </span>
+        ) : daysLeft <= 7 ? (
+          <span className="rounded-md border border-orange-200 bg-orange-50 px-2 py-0.5 font-semibold text-orange-600">
+            D-{daysLeft}
+          </span>
+        ) : (
+          <span className="text-muted-foreground tabular-nums">D-{daysLeft}</span>
         )}
-      >
-        {daysLeft === null
-          ? '미지정'
-          : daysLeft < 0
-            ? `D+${Math.abs(daysLeft)} 초과`
-            : `D-${daysLeft}`}
       </div>
     </Link>
   )

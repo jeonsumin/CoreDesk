@@ -1,19 +1,13 @@
 'use client'
 
 import { useRouter, useSearchParams } from 'next/navigation'
+import { Search } from 'lucide-react'
 import { Input } from '@/components/ui/input'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 
+// 상태 필터는 페이지 상단 세그먼트 탭이 맡고, 여기서는 검색만 한다
 export function UserFilters() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const status = searchParams.get('status') ?? 'active'
 
   const update = (key: string, value: string | null) => {
     const params = new URLSearchParams(searchParams.toString())
@@ -23,31 +17,22 @@ export function UserFilters() {
   }
 
   return (
-    <div className="flex gap-2">
-      <form
-        onSubmit={(e) => {
-          e.preventDefault()
-          const q = new FormData(e.currentTarget).get('q')
-          update('q', typeof q === 'string' ? q.trim() : null)
-        }}
-      >
-        <Input
-          name="q"
-          defaultValue={searchParams.get('q') ?? ''}
-          placeholder="이름 또는 이메일 검색 (Enter)"
-          className="w-64"
-        />
-      </form>
-      <Select value={status} onValueChange={(v) => update('status', v)}>
-        <SelectTrigger className="w-32">
-          <SelectValue placeholder="상태" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="active">활성</SelectItem>
-          <SelectItem value="inactive">비활성</SelectItem>
-          <SelectItem value="all">전체</SelectItem>
-        </SelectContent>
-      </Select>
-    </div>
+    <form
+      onSubmit={(e) => {
+        e.preventDefault()
+        const q = new FormData(e.currentTarget).get('q')
+        update('q', typeof q === 'string' ? q.trim() : null)
+      }}
+      className="relative"
+    >
+      <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+      <Input
+        name="q"
+        defaultValue={searchParams.get('q') ?? ''}
+        placeholder="이름 또는 이메일 검색 (Enter)"
+        aria-label="사용자 검색"
+        className="h-8 w-64 pl-9"
+      />
+    </form>
   )
 }

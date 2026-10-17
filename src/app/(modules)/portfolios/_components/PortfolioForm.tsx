@@ -12,7 +12,9 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
+import { FormActions } from '@/components/form/FormActions'
 import { TagInput } from '@/components/form/TagInput'
+import { FormSection } from '@/components/layout/FormPanel'
 import { toStringArray } from '@/lib/json-array'
 import { formatFileSize } from '@/lib/utils'
 import {
@@ -200,12 +202,14 @@ export function PortfolioForm({ portfolio }: Props) {
   }
 
   return (
-    <form action={action} className="space-y-6">
+    <form action={action} className="space-y-8">
       <input type="hidden" name="links" value={JSON.stringify(links)} />
 
-      <div className="grid gap-4 md:grid-cols-2">
-        <div className="space-y-2 md:col-span-2">
-          <Label htmlFor="title">제목 *</Label>
+      <FormSection title="기본 정보">
+        <div className="space-y-2">
+          <Label htmlFor="title" className="font-semibold">
+            제목 *
+          </Label>
           <Input
             id="title"
             name="title"
@@ -215,8 +219,10 @@ export function PortfolioForm({ portfolio }: Props) {
           />
         </div>
 
-        <div className="space-y-2 md:col-span-2">
-          <Label htmlFor="description">설명</Label>
+        <div className="space-y-2">
+          <Label htmlFor="description" className="font-semibold">
+            설명
+          </Label>
           <Textarea
             id="description"
             name="description"
@@ -226,106 +232,102 @@ export function PortfolioForm({ portfolio }: Props) {
           />
         </div>
 
-        <div className="space-y-2 md:col-span-2">
-          <Label htmlFor="techSpecs">구현 기술 스펙</Label>
+        <div className="space-y-2">
+          <Label htmlFor="techSpecs" className="font-semibold">
+            구현 기술 스펙
+          </Label>
           <TagInput
             name="techSpecs"
             defaultValue={toStringArray(portfolio?.techSpecs)}
             placeholder="Next.js, PostgreSQL, Docker"
           />
         </div>
+      </FormSection>
 
-        <div className="space-y-2">
-          <Label htmlFor="thumbnail">썸네일 이미지</Label>
-          <input
-            ref={thumbnailInputRef}
-            id="thumbnail"
-            name="thumbnail"
-            type="file"
-            accept="image/*"
-            onChange={handleThumbnailChange}
-            className="hidden"
-          />
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => thumbnailInputRef.current?.click()}
-            disabled={isPending}
-          >
-            <Upload size={14} />
-            <span>{thumbnailPreview ? '썸네일 변경' : '썸네일 선택'}</span>
-          </Button>
-          {thumbnailPreview && (
-            <div className="pt-1">
-              <SelectedImagePreview preview={thumbnailPreview} />
-            </div>
-          )}
-          {portfolio?.thumbnailFile && (
-            <p className="text-xs text-muted-foreground">
-              현재: {portfolio.thumbnailFile.name}
-            </p>
-          )}
+      <FormSection title="이미지">
+        <div className="grid gap-4 md:grid-cols-2">
+          <div className="space-y-2">
+            <Label htmlFor="thumbnail" className="font-semibold">
+              썸네일 이미지
+            </Label>
+            <input
+              ref={thumbnailInputRef}
+              id="thumbnail"
+              name="thumbnail"
+              type="file"
+              accept="image/*"
+              onChange={handleThumbnailChange}
+              className="hidden"
+            />
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => thumbnailInputRef.current?.click()}
+              disabled={isPending}
+            >
+              <Upload size={14} />
+              <span>{thumbnailPreview ? '썸네일 변경' : '썸네일 선택'}</span>
+            </Button>
+            {thumbnailPreview && (
+              <div className="pt-1">
+                <SelectedImagePreview preview={thumbnailPreview} />
+              </div>
+            )}
+            {portfolio?.thumbnailFile && (
+              <p className="text-xs text-muted-foreground">
+                현재: {portfolio.thumbnailFile.name}
+              </p>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="screenshots" className="font-semibold">
+              프로젝트 스크린샷
+            </Label>
+            <input
+              ref={screenshotsInputRef}
+              id="screenshots"
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={handleScreenshotsChange}
+              className="hidden"
+            />
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => screenshotsInputRef.current?.click()}
+              disabled={isPending}
+            >
+              <Plus size={14} />
+              <span>스크린샷 추가</span>
+            </Button>
+            {screenshotPreviews.length > 0 && (
+              <div className="flex flex-wrap gap-3 pt-1">
+                {screenshotPreviews.map((preview, index) => (
+                  <SelectedImagePreview
+                    key={`${preview.name}-${preview.size}-${index}`}
+                    preview={preview}
+                    onRemove={() => removeScreenshot(index)}
+                  />
+                ))}
+              </div>
+            )}
+            {portfolio && (
+              <p className="text-xs text-muted-foreground">
+                등록됨: {portfolio.images.length}개
+              </p>
+            )}
+          </div>
         </div>
+      </FormSection>
 
-        <div className="space-y-2">
-          <Label htmlFor="screenshots">프로젝트 스크린샷</Label>
-          <input
-            ref={screenshotsInputRef}
-            id="screenshots"
-            type="file"
-            accept="image/*"
-            multiple
-            onChange={handleScreenshotsChange}
-            className="hidden"
-          />
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => screenshotsInputRef.current?.click()}
-            disabled={isPending}
-          >
-            <Plus size={14} />
-            <span>스크린샷 추가</span>
-          </Button>
-          {screenshotPreviews.length > 0 && (
-            <div className="flex flex-wrap gap-3 pt-1">
-              {screenshotPreviews.map((preview, index) => (
-                <SelectedImagePreview
-                  key={`${preview.name}-${preview.size}-${index}`}
-                  preview={preview}
-                  onRemove={() => removeScreenshot(index)}
-                />
-              ))}
-            </div>
-          )}
-          {portfolio && (
-            <p className="text-xs text-muted-foreground">
-              등록됨: {portfolio.images.length}개
-            </p>
-          )}
-        </div>
-      </div>
-
-      <div className="space-y-3">
-        <div className="flex items-center justify-between gap-3">
-          <Label>URI</Label>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={addLink}
-            disabled={links.length >= 3}
-          >
-            <Plus size={14} />
-            <span>추가</span>
-          </Button>
-        </div>
-
+      <FormSection title="URI" description="배포 주소, 저장소 등 최대 3개까지 등록할 수 있습니다.">
         <div className="space-y-2">
           {links.map((link, index) => (
             <div
               key={index}
-              className="grid gap-2 rounded-lg border p-3 md:grid-cols-[140px_1fr_180px_auto]"
+              className="grid gap-2 md:grid-cols-[140px_1fr_180px_auto]"
             >
               <select
                 value={link.type}
@@ -363,22 +365,32 @@ export function PortfolioForm({ portfolio }: Props) {
                 size="icon"
                 onClick={() => removeLink(index)}
                 aria-label="URI 삭제"
+                title="URI 삭제"
               >
                 <Trash2 size={14} />
               </Button>
             </div>
           ))}
         </div>
-      </div>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={addLink}
+          disabled={links.length >= 3}
+        >
+          <Plus size={14} />
+          <span>URI 추가</span>
+        </Button>
+      </FormSection>
 
       {error && <p className="text-sm text-destructive">{error}</p>}
 
-      <div className="flex justify-end">
-        <Button type="submit" disabled={isPending}>
-          <Upload size={14} />
-          <span>{isPending ? '저장 중...' : portfolio ? '수정하기' : '생성하기'}</span>
-        </Button>
-      </div>
+      <FormActions
+        isPending={isPending}
+        submitLabel={portfolio ? '변경사항 저장' : '포트폴리오 만들기'}
+        cancelHref={portfolio ? `/portfolios/${portfolio.id}` : '/portfolios'}
+      />
     </form>
   )
 }
