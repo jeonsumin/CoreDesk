@@ -2,12 +2,6 @@
 
 import { useState, useTransition } from 'react'
 import {
-  FileText,
-  FileImage,
-  FileVideo,
-  FileAudio,
-  FileType,
-  File as FileIcon,
   MoreVertical,
   Pencil,
   Trash2,
@@ -31,6 +25,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { formatFileSize } from '@/lib/utils'
 import { deleteFile, renameFile } from '../_actions/drive'
+import { FileTypeIcon } from './FileTypeIcon'
 import type { DriveFileWithUploader } from '@/types'
 
 type Props = {
@@ -40,21 +35,6 @@ type Props = {
 
 function isImage(mime: string): boolean {
   return mime.startsWith('image/')
-}
-
-function FileTypeIcon({ mime }: { mime: string }) {
-  const size = 40
-  if (mime.startsWith('image/'))
-    return <FileImage size={size} className="text-emerald-500" />
-  if (mime.startsWith('video/'))
-    return <FileVideo size={size} className="text-purple-500" />
-  if (mime.startsWith('audio/'))
-    return <FileAudio size={size} className="text-pink-500" />
-  if (mime === 'application/pdf')
-    return <FileType size={size} className="text-red-500" />
-  if (mime.startsWith('text/'))
-    return <FileText size={size} className="text-blue-500" />
-  return <FileIcon size={size} className="text-muted-foreground" />
 }
 
 function formatDate(d: Date): string {
@@ -94,10 +74,10 @@ export function FileCard({ file, onClick }: Props) {
     <>
       <div
         onClick={onClick}
-        className="group relative rounded-lg border border-border bg-card p-3 hover:shadow-md hover:border-primary/50 transition-all cursor-pointer flex flex-col"
+        className="group relative flex cursor-pointer flex-col rounded-xl border bg-card p-3 shadow-sm transition-shadow hover:shadow-md"
       >
         {/* Thumbnail / icon area */}
-        <div className="aspect-square flex items-center justify-center rounded-md bg-muted/40 mb-2.5 overflow-hidden">
+        <div className="mb-3 flex aspect-square items-center justify-center overflow-hidden rounded-lg bg-muted/60">
           {isImage(file.mimeType) ? (
             // Unauthenticated <img> sends cookies on same-origin requests, so the
             // auth-gated /api/drive route is reachable. Browsers handle decoding.
@@ -109,26 +89,23 @@ export function FileCard({ file, onClick }: Props) {
               loading="lazy"
             />
           ) : (
-            <FileTypeIcon mime={file.mimeType} />
+            <FileTypeIcon mime={file.mimeType} className="size-10" />
           )}
         </div>
 
         {/* Name + meta */}
         <div className="flex items-start gap-1 min-w-0">
           <div className="flex-1 min-w-0">
-            <p
-              className="text-sm font-medium truncate"
-              title={file.name}
-            >
+            <p className="truncate text-sm font-semibold" title={file.name}>
               {file.name}
             </p>
-            <p className="text-xs text-muted-foreground mt-0.5">
+            <p className="mt-0.5 truncate text-xs text-muted-foreground">
               {formatFileSize(file.size)} · {formatDate(file.createdAt)}
             </p>
           </div>
           <div
             onClick={(e) => e.stopPropagation()}
-            className="opacity-0 group-hover:opacity-100 transition-opacity"
+            className="opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100"
           >
             <DropdownMenu>
               <DropdownMenuTrigger
@@ -137,6 +114,7 @@ export function FileCard({ file, onClick }: Props) {
                     variant="ghost"
                     size="icon-sm"
                     aria-label="더보기"
+                    title="더보기"
                   >
                     <MoreVertical size={14} />
                   </Button>

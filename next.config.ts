@@ -8,6 +8,8 @@ const CORS_HEADERS = [
 
 const nextConfig: NextConfig = {
 //  output: 'standalone',
+  // 개발 모드 표시가 사이드바 하단 사용자 메뉴를 가리지 않게 한다
+  devIndicators: { position: 'bottom-right' },
   experimental: {
     serverActions: {
       bodySizeLimit: '50mb',

@@ -6,9 +6,13 @@ import { getCurrentDbUser } from '@/lib/admin'
 import { canManageProject } from '@/lib/project-access'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Calendar, Settings, Trash2, Users } from 'lucide-react'
+import { Panel } from '@/components/layout/Panel'
+import { SegmentedTabs } from '@/components/layout/SegmentedTabs'
+import { ProgressBar } from '@/components/layout/StatCard'
+import { projectColor, projectStatusLabel } from '@/lib/projects/appearance'
+import { cn } from '@/lib/utils'
 import { deleteProjectFormAction } from '../_actions/project'
-import { ProjectTabBar } from '../_components/ProjectTabBar'
 import { KanbanBoard } from './tasks/_components/KanbanBoard'
 import { WbsTimeline } from './milestones/_components/WbsTimeline'
 import { MemberList } from '../_components/MemberList'
@@ -18,13 +22,6 @@ import { ProjectMemoList } from '../_components/ProjectMemoList'
 type Props = {
   params: Promise<{ id: string }>
   searchParams: Promise<{ tab?: string; subtab?: string }>
-}
-
-const statusLabel: Record<string, string> = {
-  IN_PROGRESS: '진행 중',
-  COMPLETED: '완료',
-  ON_HOLD: '보류',
-  CANCELLED: '취소',
 }
 
 export default async function ProjectDetailPage({ params, searchParams }: Props) {
@@ -83,9 +80,9 @@ export default async function ProjectDetailPage({ params, searchParams }: Props)
   const completedMilestones = project.milestones.filter((m) => m.isCompleted).length
 
   const tabs = [
-    { key: 'info', label: '정보' },
     { key: 'tasks', label: '태스크 관리' },
     { key: 'milestones', label: '마일스톤' },
+    { key: 'info', label: '정보' },
     { key: 'memos', label: '메모' },
     ...(canManage ? [{ key: 'members', label: '멤버 관리' }] : []),
   ]
@@ -101,83 +98,94 @@ export default async function ProjectDetailPage({ params, searchParams }: Props)
           orderBy: { name: 'asc' },
         })
       : []
+  const dateText = (date: Date | null) => (date ? date.toISOString().slice(0, 10) : '미정')
 
   return (
-    <div className="flex flex-col gap-4 h-full">
-      {/* Header */}
-      <div className="flex items-start justify-between shrink-0">
-        <div>
-          <div className="flex items-center gap-3 mb-1">
-            <h1 className="text-2xl font-bold">{project.name}</h1>
-            <Badge>{statusLabel[project.status]}</Badge>
+    <Panel className="flex-1">
+      {/* 프로젝트 헤더: 아이콘, 이름, 메타, 핵심 수치, 액션 */}
+      <div className="flex shrink-0 flex-wrap items-center gap-x-6 gap-y-3 border-b px-6 py-4">
+        <div className="flex min-w-0 flex-1 items-center gap-4">
+          <span
+            className={cn(
+              'flex size-12 shrink-0 items-center justify-center rounded-xl text-lg font-bold text-white',
+              projectColor(project.id),
+            )}
+          >
+            {project.name.charAt(0)}
+          </span>
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <h2 className="truncate text-xl font-bold">{project.name}</h2>
+              <Badge>{projectStatusLabel[project.status]}</Badge>
+            </div>
+            <p className="mt-0.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
+              {project.description && (
+                <span className="max-w-md truncate">{project.description}</span>
+              )}
+              <span className="flex items-center gap-1">
+                <Users className="size-3.5" />
+                {project.members.length}명
+              </span>
+              <span className="flex items-center gap-1">
+                <Calendar className="size-3.5" />
+                {dateText(project.startDate)} ~ {dateText(project.endDate)}
+              </span>
+            </p>
           </div>
-          {project.description && (
-            <p className="text-muted-foreground">{project.description}</p>
+        </div>
+
+        <div className="flex items-center gap-6">
+          <div className="w-40">
+            <div className="flex justify-between text-xs">
+              <span className="text-muted-foreground">진행률</span>
+              <span className="font-semibold text-primary">
+                {done}/{total} ({progress}%)
+              </span>
+            </div>
+            <ProgressBar value={progress} className="mt-1.5" />
+          </div>
+          <div className="text-right">
+            <p className="text-xs text-muted-foreground">마일스톤</p>
+            <p className="font-bold tabular-nums">
+              {completedMilestones}/{project.milestones.length}
+            </p>
+          </div>
+          {canManage && (
+            <div className="flex gap-1.5">
+              <Link
+                href={`/projects/${id}/settings`}
+                aria-label="프로젝트 설정"
+                title="프로젝트 설정"
+                className={cn(buttonVariants({ variant: 'outline', size: 'icon' }))}
+              >
+                <Settings />
+              </Link>
+              <form action={deleteProjectFormAction.bind(null, id)}>
+                <Button
+                  variant="destructive"
+                  type="submit"
+                  size="icon"
+                  aria-label="프로젝트 삭제"
+                  title="프로젝트 삭제"
+                >
+                  <Trash2 />
+                </Button>
+              </form>
+            </div>
           )}
         </div>
-        {canManage && (
-          <div className="flex gap-2">
-            <Link
-              href={`/projects/${id}/settings`}
-              className={buttonVariants({ variant: 'outline' })}
-            >
-              설정
-            </Link>
-            <form action={deleteProjectFormAction.bind(null, id)}>
-              <Button variant="destructive" type="submit" size="sm">
-                삭제
-              </Button>
-            </form>
-          </div>
-        )}
       </div>
 
-      {/* Stats cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 shrink-0">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm">진행률</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{progress}%</div>
-            <div className="h-2 rounded-full bg-muted mt-2 overflow-hidden">
-              <div
-                className="h-full bg-primary transition-all"
-                style={{ width: `${progress}%` }}
-              />
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              {done}/{total} 태스크 완료
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm">멤버</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{project.members.length}</div>
-            <p className="text-xs text-muted-foreground">명 참여 중</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm">마일스톤</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {completedMilestones}/{project.milestones.length}
-            </div>
-            <p className="text-xs text-muted-foreground">완료</p>
-          </CardContent>
-        </Card>
+      {/* 좁은 화면에서는 좌측 목록 패널이 숨겨지므로 탭으로 대체 */}
+      <div className="shrink-0 border-b px-4 py-2 lg:hidden">
+        <SegmentedTabs
+          size="sm"
+          activeKey={activeTab}
+          items={tabs.map((t) => ({ ...t, href: `/projects/${id}?tab=${t.key}` }))}
+        />
       </div>
 
-      {/* Tab bar */}
-      <ProjectTabBar projectId={id} activeTab={activeTab} tabs={tabs} />
-
-      {/* Tab content */}
-      <div className="flex-1 min-h-0">
+      <div className="min-h-0 flex-1 overflow-auto p-4">
         {activeTab === 'tasks' && (
           <KanbanBoard
             initialTasks={project.tasks}
@@ -219,6 +227,6 @@ export default async function ProjectDetailPage({ params, searchParams }: Props)
           </div>
         )}
       </div>
-    </div>
+    </Panel>
   )
 }

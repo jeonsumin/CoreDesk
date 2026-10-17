@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useTransition } from 'react'
-import { Button } from '@/components/ui/button'
+import { FormActions } from '@/components/form/FormActions'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import {
@@ -14,6 +14,19 @@ import {
 import { Textarea } from '@/components/ui/textarea'
 import { createTask, updateTask } from '../_actions/task'
 import type { Task, User, TaskStatus } from '@/types'
+
+const priorityItems = [
+  { value: 'HIGH', label: '높음' },
+  { value: 'MEDIUM', label: '보통' },
+  { value: 'LOW', label: '낮음' },
+]
+
+const statusItems = [
+  { value: 'TODO', label: '할 일' },
+  { value: 'IN_PROGRESS', label: '진행 중' },
+  { value: 'REVIEW', label: '검토' },
+  { value: 'DONE', label: '완료' },
+]
 
 type TaskFormProps = {
   projectId: string
@@ -44,13 +57,22 @@ export function TaskForm({
     })
   }
 
+  const assigneeItems = [
+    { value: '', label: '미배정' },
+    // 비활성화된 담당자도 기존 배정 값은 보여준다
+    ...(task?.assigneeId && !members.some((m) => m.id === task.assigneeId)
+      ? [{ value: task.assigneeId, label: `${task.assignee?.name ?? '알 수 없음'} (비활성)` }]
+      : []),
+    ...members.map((m) => ({ value: m.id, label: m.name })),
+  ]
+
   const formatDate = (date: Date | null | undefined) =>
     date ? new Date(date).toISOString().split('T')[0] : ''
 
   return (
     <form action={handleAction} className="space-y-4">
       <div className="space-y-2">
-        <Label htmlFor="title">태스크명 *</Label>
+        <Label className="font-semibold" htmlFor="title">태스크명 *</Label>
         <Input
           id="title"
           name="title"
@@ -60,7 +82,7 @@ export function TaskForm({
         />
       </div>
       <div className="space-y-2">
-        <Label htmlFor="description">설명</Label>
+        <Label className="font-semibold" htmlFor="description">설명</Label>
         <Textarea
           id="description"
           name="description"
@@ -70,57 +92,66 @@ export function TaskForm({
       </div>
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="priority">우선순위</Label>
-          <Select name="priority" defaultValue={task?.priority ?? 'MEDIUM'}>
-            <SelectTrigger id="priority">
+          <Label className="font-semibold" htmlFor="priority">우선순위</Label>
+          <Select
+            name="priority"
+            items={priorityItems}
+            defaultValue={task?.priority ?? 'MEDIUM'}
+          >
+            <SelectTrigger id="priority" className="w-full">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="HIGH">높음</SelectItem>
-              <SelectItem value="MEDIUM">보통</SelectItem>
-              <SelectItem value="LOW">낮음</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="status">상태</Label>
-          <Select name="status" defaultValue={task?.status ?? defaultStatus ?? 'TODO'}>
-            <SelectTrigger id="status">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="TODO">할 일</SelectItem>
-              <SelectItem value="IN_PROGRESS">진행 중</SelectItem>
-              <SelectItem value="REVIEW">검토</SelectItem>
-              <SelectItem value="DONE">완료</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="assigneeId">담당자</Label>
-          <Select name="assigneeId" defaultValue={task?.assigneeId ?? ''}>
-            <SelectTrigger id="assigneeId">
-              <SelectValue placeholder="담당자 선택" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="">미배정</SelectItem>
-              {task?.assigneeId && !members.some((m) => m.id === task.assigneeId) && (
-                <SelectItem value={task.assigneeId}>
-                  {task.assignee?.name ?? '알 수 없음'} (비활성)
-                </SelectItem>
-              )}
-              {members.map((m) => (
-                <SelectItem key={m.id} value={m.id}>
-                  {m.name}
+              {priorityItems.map((item) => (
+                <SelectItem key={item.value} value={item.value}>
+                  {item.label}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
         </div>
         <div className="space-y-2">
-          <Label htmlFor="dueDate">마감일</Label>
+          <Label className="font-semibold" htmlFor="status">상태</Label>
+          <Select
+            name="status"
+            items={statusItems}
+            defaultValue={task?.status ?? defaultStatus ?? 'TODO'}
+          >
+            <SelectTrigger id="status" className="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {statusItems.map((item) => (
+                <SelectItem key={item.value} value={item.value}>
+                  {item.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label className="font-semibold" htmlFor="assigneeId">담당자</Label>
+          <Select
+            name="assigneeId"
+            items={assigneeItems}
+            defaultValue={task?.assigneeId ?? ''}
+          >
+            <SelectTrigger id="assigneeId" className="w-full">
+              <SelectValue placeholder="담당자 선택" />
+            </SelectTrigger>
+            <SelectContent>
+              {assigneeItems.map((item) => (
+                <SelectItem key={item.value} value={item.value}>
+                  {item.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-2">
+          <Label className="font-semibold" htmlFor="dueDate">마감일</Label>
           <Input
             id="dueDate"
             name="dueDate"
@@ -130,9 +161,10 @@ export function TaskForm({
         </div>
       </div>
       {error && <p className="text-sm text-destructive">{error}</p>}
-      <Button type="submit" className="w-full" disabled={isPending}>
-        {isPending ? '저장 중...' : task ? '수정' : '태스크 추가'}
-      </Button>
+      <FormActions
+        isPending={isPending}
+        submitLabel={task ? '변경사항 저장' : '태스크 추가'}
+      />
     </form>
   )
 }

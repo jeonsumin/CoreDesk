@@ -3,7 +3,8 @@ import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { getCurrentDbUser } from '@/lib/admin'
 import { canManageProject } from '@/lib/project-access'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Settings } from 'lucide-react'
+import { FormPanel, FormSection } from '@/components/layout/FormPanel'
 import { MemberList } from '../../_components/MemberList'
 import { ProjectForm } from '../../_components/ProjectForm'
 
@@ -49,39 +50,24 @@ export default async function ProjectSettingsPage({ params }: Props) {
     : []
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">프로젝트 설정</h1>
-        <p className="text-muted-foreground">{project.name}</p>
-      </div>
-
+    <FormPanel icon={<Settings />} title={`${project.name} 설정`}>
       {canManage && (
-        <Card>
-          <CardHeader>
-            <CardTitle>기본 정보 수정</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ProjectForm project={project} />
-          </CardContent>
-        </Card>
+        <FormSection title="기본 정보" description="프로젝트 이름, 상태, 기간을 수정합니다.">
+          <ProjectForm project={project} />
+        </FormSection>
       )}
 
-      <Card>
-        <CardHeader>
-          <CardTitle>멤버 관리</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <MemberList
-            projectId={id}
-            ownerId={project.ownerId}
-            members={project.members}
-            candidates={candidates}
-            currentUserId={session.user.id}
-            canManage={canManage}
-            isAdmin={isAdmin}
-          />
-        </CardContent>
-      </Card>
-    </div>
+      <FormSection title="멤버 관리" description="프로젝트에 참여할 팀원과 역할을 관리합니다.">
+        <MemberList
+          projectId={id}
+          ownerId={project.ownerId}
+          members={project.members}
+          candidates={candidates}
+          currentUserId={session.user.id}
+          canManage={canManage}
+          isAdmin={isAdmin}
+        />
+      </FormSection>
+    </FormPanel>
   )
 }

@@ -7,6 +7,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
+import { CountBadge, EmptyState } from '@/components/layout/Panel'
 import { MarkdownPreview } from '@/components/memo/MarkdownPreview'
 import { getMemoPreviewContent } from '@/lib/memo/blocks'
 
@@ -38,43 +39,47 @@ function formatDate(date: Date): string {
 export function ProjectMemoList({ projectId, memos }: Props) {
   return (
     <div className="space-y-4">
+      {/* 툴바: 개수 + 작성 (패널 안이므로 테두리 없음) */}
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h2 className="text-base font-semibold">연동된 메모</h2>
-          <p className="text-sm text-muted-foreground">
-            이 프로젝트에 연결된 메모 {memos.length}개
-          </p>
-        </div>
+        <h3 className="flex items-center gap-2 text-sm font-semibold">
+          연동된 메모
+          <CountBadge>{memos.length}</CountBadge>
+        </h3>
         <Link
           href={`/memos/new?projectId=${projectId}`}
-          className={buttonVariants({ variant: 'outline' })}
+          className={buttonVariants({ size: 'sm' })}
         >
-          <Plus size={14} />
+          <Plus data-icon="inline-start" />
           메모 작성
         </Link>
       </div>
 
       {memos.length === 0 ? (
-        <div className="rounded-lg border border-dashed p-12 text-center">
-          <FileText size={40} className="mx-auto mb-3 text-muted-foreground" />
-          <p className="mb-4 text-muted-foreground">
-            이 프로젝트에 연결된 메모가 없습니다.
-          </p>
-          <Link
-            href={`/memos/new?projectId=${projectId}`}
-            className={buttonVariants()}
-          >
-            첫 메모 작성하기
-          </Link>
-        </div>
+        <EmptyState
+          icon={<FileText />}
+          title="이 프로젝트에 연결된 메모가 없습니다."
+          description="회의록, 결정 사항 등을 메모로 남겨 팀과 공유하세요."
+          action={
+            <Link
+              href={`/memos/new?projectId=${projectId}`}
+              className={buttonVariants()}
+            >
+              <Plus data-icon="inline-start" />첫 메모 작성하기
+            </Link>
+          }
+        />
       ) : (
         <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
           {memos.map((memo) => (
-            <Card key={memo.id} size="sm">
+            <Card
+              key={memo.id}
+              size="sm"
+              className="shadow-sm transition-shadow hover:shadow-md"
+            >
               <CardHeader>
                 <div className="min-w-0 space-y-1">
                   <CardTitle className="truncate">
-                    <Link href={`/memos/${memo.id}`} className="hover:underline">
+                    <Link href={`/memos/${memo.id}`} className="hover:text-primary">
                       {memo.title}
                     </Link>
                   </CardTitle>

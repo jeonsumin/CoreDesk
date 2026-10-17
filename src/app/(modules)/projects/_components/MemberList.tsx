@@ -10,10 +10,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Badge } from '@/components/ui/badge'
+import { CountBadge } from '@/components/layout/Panel'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { inviteMember, removeMember, updateMemberRole } from '../_actions/member'
 import { isProjectMemberRole, type ProjectMemberRole } from '@/lib/project-access'
+import { cn } from '@/lib/utils'
 import type { ProjectMember, User } from '@/types'
 
 type MemberWithUser = ProjectMember & {
@@ -35,6 +36,13 @@ const roleLabel: Record<ProjectMemberRole, string> = {
   DEVELOPER: '개발자',
   VIEWER: '열람자',
 }
+
+const roleItems = (Object.keys(roleLabel) as ProjectMemberRole[]).map((value) => ({
+  value,
+  label: roleLabel[value],
+}))
+
+const badgeClass = 'rounded-md border px-2 py-0.5 text-xs font-semibold'
 
 export function MemberList({
   projectId,
@@ -70,39 +78,63 @@ export function MemberList({
     })
   }
 
-  const selectedCandidate = candidates.find((c) => c.id === inviteUserId)
+  const candidateItems = candidates.map((c) => ({
+    value: c.id,
+    label: `${c.name} (${c.email})`,
+  }))
 
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-sm font-medium mb-3">
-          현재 멤버 ({members.length}명)
+        <h3 className="mb-2 flex items-center gap-2 text-sm font-semibold">
+          현재 멤버
+          <CountBadge>{members.length}</CountBadge>
         </h3>
-        <div className="space-y-2">
+        <div className="border-t">
           {members.map((m) => {
             const isOwnerRow = m.userId === ownerId
             return (
               <div
                 key={m.userId}
-                className="flex items-center justify-between rounded-lg border p-3"
+                className="flex min-h-14 items-center justify-between gap-3 border-b px-2 py-2 transition-colors hover:bg-muted/50"
               >
-                <div className="flex items-center gap-3">
+                <div className="flex min-w-0 items-center gap-3">
                   <Avatar className="h-8 w-8">
-                    <AvatarFallback>{m.user.name.charAt(0)}</AvatarFallback>
+                    <AvatarFallback
+                      className={cn(
+                        m.user.isActive
+                          ? 'bg-primary/10 text-primary'
+                          : 'bg-muted text-muted-foreground',
+                      )}
+                    >
+                      {m.user.name.charAt(0)}
+                    </AvatarFallback>
                   </Avatar>
-                  <div>
-                    <p className="text-sm font-medium">{m.user.name}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {m.user.email}
+                  <div className="min-w-0">
+                    <p
+                      className={cn(
+                        'text-sm font-medium',
+                        !m.user.isActive && 'text-muted-foreground',
+                      )}
+                    >
+                      {m.user.name}
                     </p>
+                    <p className="truncate text-xs text-muted-foreground">{m.user.email}</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  {!m.user.isActive && <Badge variant="secondary">비활성</Badge>}
+                <div className="flex shrink-0 items-center gap-2">
+                  {!m.user.isActive && (
+                    <span className={cn(badgeClass, 'bg-muted text-muted-foreground')}>
+                      비활성
+                    </span>
+                  )}
                   {isOwnerRow ? (
-                    <Badge>오너</Badge>
+                    <span className={cn(badgeClass, 'border-primary/30 text-primary')}>
+                      오너
+                    </span>
                   ) : canManage ? (
                     <Select
+                      items={roleItems}
                       value={m.role}
                       onValueChange={(v) => {
                         if (isProjectMemberRole(v) && v !== m.role) {
@@ -111,23 +143,27 @@ export function MemberList({
                       }}
                       disabled={isPending}
                     >
-                      <SelectTrigger className="w-28">
-                        <SelectValue>{roleLabel[m.role]}</SelectValue>
+                      <SelectTrigger className="w-28" aria-label={`${m.user.name} 역할`}>
+                        <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="PM">PM</SelectItem>
-                        <SelectItem value="DEVELOPER">개발자</SelectItem>
-                        <SelectItem value="VIEWER">열람자</SelectItem>
+                        {roleItems.map((item) => (
+                          <SelectItem key={item.value} value={item.value}>
+                            {item.label}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   ) : (
-                    <Badge variant="outline">{roleLabel[m.role]}</Badge>
+                    <span className={cn(badgeClass, 'text-muted-foreground')}>
+                      {roleLabel[m.role]}
+                    </span>
                   )}
                   {canManage && !isOwnerRow && m.userId !== currentUserId && (
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="text-destructive hover:text-destructive"
+                      className="text-muted-foreground hover:text-destructive"
                       onClick={() => run(() => removeMember(projectId, m.userId))}
                       disabled={isPending}
                     >
@@ -143,53 +179,53 @@ export function MemberList({
 
       {canManage && (
         <div>
-          <h3 className="text-sm font-medium mb-3">멤버 초대</h3>
+          <h3 className="mb-2 text-sm font-semibold">멤버 초대</h3>
           {candidates.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
-              초대할 수 있는 사용자가 없습니다
+            <div className="rounded-lg bg-muted/50 px-4 py-3 text-sm text-muted-foreground">
+              초대할 수 있는 사용자가 없습니다.
               {isAdmin && (
                 <>
                   {' '}
-                  <Link href="/system/users" className="underline">
-                    사용자 관리
+                  <Link href="/system/users" className="font-medium text-primary hover:underline">
+                    사용자관리에서 계정 만들기
                   </Link>
                 </>
               )}
-            </p>
+            </div>
           ) : (
             <div className="flex gap-2">
-              <Select value={inviteUserId} onValueChange={setInviteUserId}>
-                <SelectTrigger className="flex-1">
-                  <SelectValue placeholder="사용자 선택">
-                    {selectedCandidate &&
-                      `${selectedCandidate.name} (${selectedCandidate.email})`}
-                  </SelectValue>
+              <Select items={candidateItems} value={inviteUserId} onValueChange={setInviteUserId}>
+                <SelectTrigger className="h-9 flex-1" aria-label="초대할 사용자">
+                  <SelectValue placeholder="사용자 선택" />
                 </SelectTrigger>
                 <SelectContent>
-                  {candidates.map((c) => (
-                    <SelectItem key={c.id} value={c.id}>
-                      {c.name} ({c.email})
+                  {candidateItems.map((item) => (
+                    <SelectItem key={item.value} value={item.value}>
+                      {item.label}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
               <Select
+                items={roleItems}
                 value={inviteRole}
                 onValueChange={(v) => {
                   if (isProjectMemberRole(v)) setInviteRole(v)
                 }}
               >
-                <SelectTrigger className="w-28">
-                  <SelectValue>{roleLabel[inviteRole]}</SelectValue>
+                <SelectTrigger className="h-9 w-28" aria-label="역할">
+                  <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="PM">PM</SelectItem>
-                  <SelectItem value="DEVELOPER">개발자</SelectItem>
-                  <SelectItem value="VIEWER">열람자</SelectItem>
+                  {roleItems.map((item) => (
+                    <SelectItem key={item.value} value={item.value}>
+                      {item.label}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
-              <Button type="button" onClick={handleInvite} disabled={isPending}>
-                초대
+              <Button type="button" size="lg" onClick={handleInvite} disabled={isPending}>
+                멤버 초대
               </Button>
             </div>
           )}

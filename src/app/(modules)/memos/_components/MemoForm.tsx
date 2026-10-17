@@ -1,8 +1,7 @@
 'use client'
 
 import { useCallback, useState, useTransition } from 'react'
-import { Save } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import { FormActions } from '@/components/form/FormActions'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import type { Memo } from '@/types'
@@ -40,47 +39,56 @@ export function MemoForm({ projects, memo, defaultProjectId }: Props) {
   }
 
   return (
-    <form id="memo-form" action={action} className="space-y-5">
-      <div className="space-y-2">
-        <Label htmlFor="title">제목 *</Label>
-        <Input
-          id="title"
-          name="title"
-          defaultValue={memo?.title}
-          placeholder="메모 제목"
-          required
-        />
+    <form id="memo-form" action={action} className="space-y-6">
+      <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_16rem]">
+        <div className="space-y-2">
+          <Label htmlFor="title" className="font-semibold">
+            제목 *
+          </Label>
+          <Input
+            id="title"
+            name="title"
+            defaultValue={memo?.title}
+            placeholder="메모 제목"
+            required
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="projectId" className="font-semibold">
+            프로젝트 연결
+          </Label>
+          <select
+            id="projectId"
+            name="projectId"
+            defaultValue={initialProjectId}
+            className="h-9 w-full rounded-lg border border-input bg-background px-3 text-sm outline-none transition-colors focus-visible:border-primary focus-visible:ring-3 focus-visible:ring-primary/20"
+          >
+            <option value="">연결 안 함</option>
+            {projects.map((project) => (
+              <option key={project.id} value={project.id}>
+                {project.name}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="projectId">프로젝트 연결</Label>
-        <select
-          id="projectId"
-          name="projectId"
-          defaultValue={initialProjectId}
-          className="h-9 w-full rounded-lg border border-input bg-background px-3 text-sm outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/15"
-        >
-          <option value="">연결 안 함</option>
-          {projects.map((project) => (
-            <option key={project.id} value={project.id}>
-              {project.name}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="content">내용</Label>
+        <Label htmlFor="content" className="font-semibold">
+          내용
+        </Label>
         <input type="hidden" id="content" name="content" value={content} />
         <BlockEditor content={content} onChange={handleEditorChange} />
       </div>
 
       {error && <p className="text-sm text-destructive">{error}</p>}
 
-      <Button type="submit" className="w-full" disabled={isPending}>
-        <Save size={14} />
-        {isPending ? '저장 중...' : memo ? '메모 수정' : '메모 저장'}
-      </Button>
+      <FormActions
+        submitLabel={memo ? '변경사항 저장' : '메모 저장'}
+        isPending={isPending}
+        cancelHref={memo ? `/memos/${memo.id}` : '/memos'}
+      />
     </form>
   )
 }

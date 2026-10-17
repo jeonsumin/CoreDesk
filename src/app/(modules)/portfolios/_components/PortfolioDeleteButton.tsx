@@ -20,15 +20,19 @@ export function PortfolioDeleteButton({ id }: Props) {
     })
   }
 
+  const label = isPending ? '삭제 중...' : '포트폴리오 삭제'
+
   return (
     <Button
       type="button"
       variant="destructive"
+      size="icon"
       onClick={handleDelete}
       disabled={isPending}
+      aria-label={label}
+      title={label}
     >
-      <Trash2 size={14} />
-      <span>{isPending ? '삭제 중...' : '삭제'}</span>
+      <Trash2 />
     </Button>
   )
 }

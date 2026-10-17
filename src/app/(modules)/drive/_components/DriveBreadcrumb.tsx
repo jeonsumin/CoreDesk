@@ -8,30 +8,40 @@ type Props = {
   breadcrumb: BreadcrumbItem[]
 }
 
+// 패널 툴바의 경로 표시. 루트에서도 "드라이브"를 현재 위치로 보여준다
 export function DriveBreadcrumb({ breadcrumb }: Props) {
-  if (breadcrumb.length === 0) return null
+  const atRoot = breadcrumb.length === 0
 
   return (
-    <nav className="flex items-center gap-1 text-sm text-muted-foreground">
-      <Link
-        href="/drive"
-        className="flex items-center gap-1 hover:text-foreground transition-colors"
-      >
-        <HardDrive size={14} />
-        <span>드라이브</span>
-      </Link>
+    <nav aria-label="폴더 경로" className="flex min-w-0 items-center gap-1 text-sm text-muted-foreground">
+      {atRoot ? (
+        <span className="flex shrink-0 items-center gap-1.5 font-semibold text-foreground">
+          <HardDrive className="size-4 text-primary" />
+          드라이브
+        </span>
+      ) : (
+        <Link
+          href="/drive"
+          className="flex shrink-0 items-center gap-1.5 transition-colors hover:text-foreground"
+        >
+          <HardDrive className="size-4" />
+          드라이브
+        </Link>
+      )}
 
       {breadcrumb.map((item, index) => {
         const isLast = index === breadcrumb.length - 1
         return (
-          <span key={item.id} className="flex items-center gap-1">
-            <ChevronRight size={14} className="shrink-0" />
+          <span key={item.id} className="flex min-w-0 items-center gap-1">
+            <ChevronRight className="size-3.5 shrink-0" />
             {isLast ? (
-              <span className="text-foreground font-medium">{item.name}</span>
+              <span className="truncate font-semibold text-foreground" aria-current="page">
+                {item.name}
+              </span>
             ) : (
               <Link
                 href={`/drive?folderId=${item.id}`}
-                className="hover:text-foreground transition-colors"
+                className="truncate transition-colors hover:text-foreground"
               >
                 {item.name}
               </Link>

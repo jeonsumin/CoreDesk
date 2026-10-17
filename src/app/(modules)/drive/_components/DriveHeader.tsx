@@ -11,7 +11,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
+import { PageHeader } from '@/components/layout/PageHeader'
 import { uploadFile, createFolder } from '../_actions/drive'
+
+// 빈 폴더 안내의 업로드 버튼(label)이 이 input을 연다
+export const DRIVE_UPLOAD_INPUT_ID = 'drive-upload-input'
 
 type Props = {
   folderId: string | null
@@ -113,43 +117,45 @@ export function DriveHeader({ folderId }: Props) {
         onDragLeave={handleDragLeave}
         onDragOver={handleDragOver}
         onDrop={handleDrop}
-        className="relative"
+        className="relative shrink-0"
       >
-        <div className="flex items-center justify-between gap-3 flex-wrap">
-          <div>
-            <h1 className="text-2xl font-bold">드라이브</h1>
-            <p className="text-sm text-muted-foreground">
-              파일을 업로드하고 미리보기로 빠르게 확인하세요.
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <input
-              ref={inputRef}
-              type="file"
-              multiple
-              onChange={handleInputChange}
-              className="hidden"
-              aria-hidden="true"
-            />
-            <Button variant="outline" onClick={openNewFolder} disabled={isPending}>
-              <FolderPlus size={14} />
-              <span>새 폴더</span>
-            </Button>
-            <Button onClick={() => !isPending && inputRef.current?.click()} disabled={isPending}>
-              {isUploading ? (
-                <>
-                  <Loader2 size={14} className="animate-spin" />
-                  <span>업로드 중...</span>
-                </>
-              ) : (
-                <>
-                  <Upload size={14} />
-                  <span>파일 업로드</span>
-                </>
-              )}
-            </Button>
-          </div>
-        </div>
+        <PageHeader
+          title="드라이브"
+          actions={
+            <>
+              <input
+                id={DRIVE_UPLOAD_INPUT_ID}
+                ref={inputRef}
+                type="file"
+                multiple
+                onChange={handleInputChange}
+                className="hidden"
+                aria-hidden="true"
+              />
+              <Button variant="outline" size="lg" onClick={openNewFolder} disabled={isPending}>
+                <FolderPlus data-icon="inline-start" />
+                새 폴더
+              </Button>
+              <Button
+                size="lg"
+                onClick={() => !isPending && inputRef.current?.click()}
+                disabled={isPending}
+              >
+                {isUploading ? (
+                  <>
+                    <Loader2 data-icon="inline-start" className="animate-spin" />
+                    업로드 중...
+                  </>
+                ) : (
+                  <>
+                    <Upload data-icon="inline-start" />
+                    파일 업로드
+                  </>
+                )}
+              </Button>
+            </>
+          }
+        />
 
         {errorMsg && <p className="mt-2 text-xs text-destructive">{errorMsg}</p>}
 
@@ -192,7 +198,7 @@ export function DriveHeader({ folderId }: Props) {
               취소
             </Button>
             <Button onClick={handleCreateFolder} disabled={isCreating}>
-              {isCreating ? '생성 중...' : '만들기'}
+              {isCreating ? '생성 중...' : '폴더 만들기'}
             </Button>
           </DialogFooter>
         </DialogContent>

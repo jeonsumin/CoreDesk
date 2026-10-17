@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CoreDesk 주간 브리핑</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+<style>
+/* C안 — 브리핑: 대시보드를 "읽는 문서"로. 첫 문장이 결론, 그 아래는 근거 */
+:root {
+  --canvas: #F5F6F8;
+  --surface: #FFFFFF;
+  --ink: #1A1F36;
+  --ink-2: #5B6177;
+  --line: #E1E4EC;
+  --indigo: #3B3FB6;
+  --coral: #D9472F;
+  --coral-soft: #FCE6E1;
+  --amber: #B97700;
+  --green: #2F8F5B;
+}
+* { box-sizing: border-box; }
+body { word-break: keep-all; }
+body { margin: 0; background: var(--canvas); color: var(--ink); font: 400 15px/1.6 "Pretendard Variable", Pretendard, system-ui, sans-serif; }
+a { color: inherit; }
+:focus-visible { outline: 2px solid var(--indigo); outline-offset: 3px; }
+
+/* 상단 내비 — 사이드바 없이 본문 폭을 문서처럼 */
+.topnav { background: var(--ink); color: #C9CCE0; }
+.topnav .in { max-width: 1040px; margin: 0 auto; display: flex; align-items: center; gap: 28px; height: 56px; padding: 0 24px; }
+.topnav strong { color: #fff; font-size: 17px; }
+.topnav nav { display: flex; gap: 22px; }
+.topnav nav a { text-decoration: none; padding: 17px 0; border-bottom: 2px solid transparent; }
+.topnav nav a[aria-current] { color: #fff; border-color: #fff; }
+.topnav nav a:hover { color: #fff; }
+.who { margin-left: auto; display: flex; align-items: center; gap: 10px; font-size: 14px; }
+.who i { width: 30px; height: 30px; border-radius: 50%; background: #4C5280; display: grid; place-items: center; color: #fff; font-style: normal; font-weight: 600; }
+
+.doc { max-width: 1040px; margin: 0 auto; padding: 48px 24px 80px; }
+.period { color: var(--ink-2); margin: 0 0 12px; display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
+.period select { font: inherit; border: 1px solid var(--line); background: var(--surface); border-radius: 6px; padding: 4px 8px; }
+.lede { font-family: "Noto Serif KR", serif; font-weight: 700; font-size: clamp(28px, 4.2vw, 44px); line-height: 1.35; letter-spacing: -0.02em; margin: 0; max-width: 24ch; }
+.lede-sub { font-size: 17px; color: var(--ink-2); max-width: 60ch; margin: 18px 0 40px; line-height: 1.7; }
+
+/* 숫자 요약 — 문장 안의 수치를 다시 한 줄로 */
+.tally { display: grid; grid-template-columns: repeat(4, 1fr); border-top: 2px solid var(--ink); border-bottom: 1px solid var(--line); margin-bottom: 56px; }
+.tally div { padding: 16px 0 18px; }
+.tally div + div { padding-left: 20px; border-left: 1px solid var(--line); }
+.tally b { display: block; font-size: 30px; font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+.tally span { color: var(--ink-2); font-size: 14px; }
+.tally .bad b { color: var(--coral); }
+
+h2 { font-family: "Noto Serif KR", serif; font-size: 24px; font-weight: 700; margin: 0 0 6px; }
+.section-note { color: var(--ink-2); margin: 0 0 20px; }
+
+/* 판단 필요 카드 */
+.decide { display: grid; gap: 16px; margin-bottom: 56px; }
+.case { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 24px 28px; display: grid; grid-template-columns: 1fr 260px; gap: 28px; }
+.case header { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; flex-wrap: wrap; }
+.case h3 { margin: 0; font-size: 20px; font-weight: 700; }
+.tag { font-size: 13px; font-weight: 700; padding: 2px 9px; border-radius: 6px; background: var(--coral-soft); color: var(--coral); }
+.case p { margin: 0 0 14px; max-width: 58ch; }
+.case .ask { border-left: 3px solid var(--indigo); padding: 2px 0 2px 14px; color: var(--ink); font-weight: 600; }
+.case .actions { display: flex; gap: 8px; margin-top: 18px; flex-wrap: wrap; }
+.btn { font: inherit; font-size: 14px; font-weight: 600; padding: 8px 14px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); cursor: pointer; text-decoration: none; }
+.btn.primary { background: var(--indigo); border-color: var(--indigo); color: #fff; }
+.chart { align-self: center; margin: 0; }
+.chart figcaption { font-size: 13px; color: var(--ink-2); margin-top: 6px; }
+.chart svg { width: 100%; height: auto; display: block; }
+
+/* 순항 목록 */
+.steady { width: 100%; border-collapse: collapse; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+.steady th { text-align: left; font-weight: 500; font-size: 13px; color: var(--ink-2); padding: 12px 20px; border-bottom: 1px solid var(--line); background: #FAFBFC; }
+.steady td { padding: 16px 20px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+.steady tr:last-child td { border-bottom: 0; }
+.steady td:first-child { font-weight: 600; }
+.mini { display: flex; align-items: center; gap: 10px; font-variant-numeric: tabular-nums; }
+.mini span { width: 120px; height: 6px; background: #E8EAF2; border-radius: 3px; overflow: hidden; }
+.mini i { display: block; height: 100%; background: var(--green); }
+.amber { color: var(--amber); font-weight: 600; }
+.foot { margin-top: 40px; color: var(--ink-2); font-size: 14px; }
+
+@media (max-width: 820px) {
+  .topnav nav { display: none; }
+  .doc { padding: 32px 16px 64px; }
+  .tally { grid-template-columns: 1fr 1fr; }
+  .tally div:nth-child(3) { padding-left: 0; border-left: 0; }
+  .tally div:nth-child(n+3) { border-top: 1px solid var(--line); }
+  .case { grid-template-columns: 1fr; padding: 20px; }
+  .steady thead { display: none; }
+  .steady tr { display: grid; grid-template-columns: 1fr auto; padding: 12px 16px; border-bottom: 1px solid var(--line); }
+  .steady td { padding: 2px 0; border: 0; }
+}
+</style>
+</head>
+<body>
+<header class="topnav">
+  <div class="in">
+    <strong>CoreDesk</strong>
+    <nav aria-label="주 메뉴">
+      <a href="#" aria-current="page">브리핑</a>
+      <a href="#">프로젝트 관리</a>
+      <a href="#">포트폴리오 관리</a>
+      <a href="#">메모</a>
+      <a href="#">드라이브</a>
+    </nav>
+    <div class="who"><i aria-hidden="true">박</i>박성호</div>
+  </div>
+</header>
+
+<main class="doc">
+  <p class="period">
+    <label>기간 <select aria-label="기간"><option>이번 주 (10/13 ~ 10/17)</option><option>지난 주</option><option>이번 달</option></select></label>
+    <span>오늘 오전 9시 기준</span>
+  </p>
+  <h1 class="lede">진행 중인 5개 프로젝트 중 2개는 이번 주에 결정이 필요합니다.</h1>
+  <p class="lede-sub">사내 메신저 연동은 마감을 3일 넘겼고, 고객 포털 리뉴얼은 5일 남은 상태에서 절반을 넘기지 못했습니다. 나머지 3개는 일정 안에서 움직이고 있습니다.</p>
+
+  <div class="tally">
+    <div><b>5</b><span>진행 중 프로젝트</span></div>
+    <div><b>58%</b><span>전체 태스크 완료율</span></div>
+    <div class="bad"><b>2</b><span>판단이 필요한 프로젝트</span></div>
+    <div><b>+23</b><span>이번 주 완료한 태스크</span></div>
+  </div>
+
+  <section aria-labelledby="h-decide">
+    <h2 id="h-decide">결정이 필요한 프로젝트</h2>
+    <p class="section-note">마감까지 7일 이하이고 진행률이 50% 미만이거나, 이미 마감을 넘긴 프로젝트입니다.</p>
+    <div class="decide">
+      <article class="case">
+        <div>
+          <header><h3>사내 메신저 연동</h3><span class="tag">마감 3일 초과</span></header>
+          <p>10월 14일 마감이었고 현재 74%입니다. 남은 5개 태스크 중 3개가 푸시 알림 쪽에 몰려 있고, 담당자 이수민 님이 고객 포털과 겹쳐 배정되어 있습니다.</p>
+          <p class="ask">PM 김지훈 님 제안: 마감을 10/24로 1주 연장하거나, 푸시 알림을 다음 릴리스로 분리</p>
+          <div class="actions"><a class="btn primary" href="#">프로젝트 열기</a><a class="btn" href="#">PM에게 메모 남기기</a></div>
+        </div>
+        <figure class="chart">
+          <svg viewBox="0 0 260 110" role="img" aria-label="최근 3주 진행률, 52%에서 74%로 상승, 목표선 100%">
+            <line x1="0" y1="10" x2="260" y2="10" stroke="#C9CCE0" stroke-dasharray="4 4"/>
+            <text x="258" y="24" text-anchor="end" font-size="11" fill="#5B6177">목표 100%</text>
+            <polyline points="0,62 43,58 87,51 130,44 173,38 217,35 260,34" fill="none" stroke="#D9472F" stroke-width="2.5"/>
+            <circle cx="260" cy="34" r="4" fill="#D9472F"/>
+            <line x1="173" y1="0" x2="173" y2="100" stroke="#1A1F36" stroke-width="1"/>
+            <text x="169" y="98" text-anchor="end" font-size="11" fill="#1A1F36">마감 10/14</text>
+          </svg>
+          <figcaption>최근 3주 진행률 52% → 74%</figcaption>
+        </figure>
+      </article>
+
+      <article class="case">
+        <div>
+          <header><h3>고객 포털 리뉴얼</h3><span class="tag">D-5, 진행률 42%</span></header>
+          <p>10월 22일 마감까지 남은 태스크가 18개입니다. 지난주 완료 속도(주 7개)로는 마감까지 약 6개를 더 끝낼 수 있습니다.</p>
+          <p class="ask">PM 김지훈 님 제안: 사용자 테스트 일정을 유지하고 마이페이지 개편은 범위에서 제외</p>
+          <div class="actions"><a class="btn primary" href="#">프로젝트 열기</a><a class="btn" href="#">PM에게 메모 남기기</a></div>
+        </div>
+        <figure class="chart">
+          <svg viewBox="0 0 260 110" role="img" aria-label="최근 3주 진행률, 20%에서 42%로 상승, 마감 10/22">
+            <line x1="0" y1="10" x2="260" y2="10" stroke="#C9CCE0" stroke-dasharray="4 4"/>
+            <text x="4" y="24" font-size="11" fill="#5B6177">목표 100%</text>
+            <polyline points="0,82 36,78 72,72 108,66 144,60 180,58" fill="none" stroke="#D9472F" stroke-width="2.5"/>
+            <polyline points="180,58 240,52" fill="none" stroke="#D9472F" stroke-width="2" stroke-dasharray="3 4"/>
+            <circle cx="180" cy="58" r="4" fill="#D9472F"/>
+            <line x1="240" y1="0" x2="240" y2="100" stroke="#1A1F36" stroke-width="1"/>
+            <text x="236" y="98" text-anchor="end" font-size="11" fill="#1A1F36">마감 10/22</text>
+          </svg>
+          <figcaption>현재 속도로는 마감일에 약 55% 예상</figcaption>
+        </figure>
+      </article>
+    </div>
+  </section>
+
+  <section aria-labelledby="h-steady">
+    <h2 id="h-steady">일정 안에서 진행 중</h2>
+    <p class="section-note">별도 판단 없이 지켜보면 되는 프로젝트입니다.</p>
+    <table class="steady">
+      <thead><tr><th>프로젝트</th><th>PM</th><th>진행률</th><th>마감</th></tr></thead>
+      <tbody>
+        <tr><td>데이터 파이프라인 이관</td><td>정다은</td><td><div class="mini"><span><i style="width:88%"></i></span>88%</div></td><td class="amber">D-2</td></tr>
+        <tr><td>결제 모듈 v2</td><td>김지훈</td><td><div class="mini"><span><i style="width:61%"></i></span>61%</div></td><td>11/30 (D-44)</td></tr>
+        <tr><td>모바일 앱 3.0</td><td>한유진</td><td><div class="mini"><span><i style="width:18%"></i></span>18%</div></td><td>12/20 (D-64)</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <p class="foot">이 브리핑은 매주 월요일 오전 9시에 새로 정리됩니다. 숫자는 태스크 완료 수 기준입니다.</p>
+</main>
+</body>
+</html>

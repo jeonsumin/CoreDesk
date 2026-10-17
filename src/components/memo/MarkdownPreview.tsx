@@ -25,7 +25,7 @@ function renderInline(inline: MarkdownInline, key: string) {
       return (
         <code
           key={key}
-          className="rounded bg-muted px-1 py-0.5 font-mono text-[0.85em]"
+          className="rounded-md bg-muted px-1.5 py-0.5 font-mono text-[0.85em] text-foreground"
         >
           {inline.text}
         </code>
@@ -39,7 +39,7 @@ function renderInline(inline: MarkdownInline, key: string) {
             href={inline.href}
             target="_blank"
             rel="noreferrer"
-            className="text-primary underline-offset-4 hover:underline"
+            className="font-medium text-primary underline-offset-4 hover:underline"
           >
             {inline.text}
           </a>
@@ -50,7 +50,7 @@ function renderInline(inline: MarkdownInline, key: string) {
         <Link
           key={key}
           href={inline.href}
-          className="text-primary underline-offset-4 hover:underline"
+          className="font-medium text-primary underline-offset-4 hover:underline"
         >
           {inline.text}
         </Link>
@@ -68,10 +68,10 @@ function renderInlineMarkdown(text: string, keyPrefix: string) {
 }
 
 function headingClassName(level: number, compact: boolean): string {
-  if (compact) return 'text-sm font-semibold'
-  if (level === 1) return 'text-xl font-semibold'
-  if (level === 2) return 'text-lg font-semibold'
-  return 'text-base font-semibold'
+  if (compact) return 'text-sm font-semibold text-foreground'
+  if (level === 1) return 'pt-2 text-xl font-bold text-foreground'
+  if (level === 2) return 'pt-1 text-lg font-semibold text-foreground'
+  return 'text-base font-semibold text-foreground'
 }
 
 export function MarkdownPreview({ content, compact = false, className }: Props) {
@@ -180,7 +180,7 @@ export function MarkdownPreview({ content, compact = false, className }: Props) 
           return (
             <blockquote
               key={key}
-              className="border-l-2 border-border pl-3 text-muted-foreground"
+              className="border-l-2 border-primary/40 pl-3 text-muted-foreground"
             >
               {renderInlineMarkdown(block.text, key)}
             </blockquote>
@@ -191,7 +191,7 @@ export function MarkdownPreview({ content, compact = false, className }: Props) 
           return (
             <pre
               key={key}
-              className="overflow-x-auto rounded-lg bg-muted p-3 text-xs leading-5"
+              className="overflow-x-auto rounded-lg bg-muted p-3 font-mono text-xs leading-5 text-foreground"
             >
               <code>{block.code}</code>
             </pre>

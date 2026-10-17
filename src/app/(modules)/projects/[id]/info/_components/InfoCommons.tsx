@@ -45,7 +45,7 @@ export function TagChips({ tags, className }: TagChipsProps) {
       {tags.map((t, i) => (
         <span
           key={`${t}-${i}`}
-          className="inline-flex items-center rounded-full bg-primary/10 text-primary text-[11px] font-medium px-2 py-0.5"
+          className="inline-flex items-center rounded-full border border-primary/40 px-2 text-xs text-primary"
         >
           {t}
         </span>
@@ -76,7 +76,7 @@ export function PasswordInput({
         type={visible ? 'text' : 'password'}
         defaultValue={defaultValue ?? ''}
         placeholder={placeholder}
-        className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 pr-9 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+        className="flex h-9 w-full rounded-lg border border-input bg-background px-3 pr-9 py-1 text-sm transition-colors outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/15 disabled:cursor-not-allowed disabled:opacity-50"
       />
       <button
         type="button"

@@ -36,11 +36,12 @@ export function TaskStatusSelect({ taskId, projectId, currentStatus }: Props) {
 
   return (
     <Select
+      items={statusLabel}
       value={currentStatus}
       onValueChange={handleChange}
       disabled={isPending}
     >
-      <SelectTrigger className="w-28 h-7 text-xs">
+      <SelectTrigger size="sm" className="w-28 text-xs">
         <SelectValue />
       </SelectTrigger>
       <SelectContent>

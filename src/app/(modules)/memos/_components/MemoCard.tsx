@@ -1,12 +1,5 @@
 import Link from 'next/link'
-import { CalendarDays, FolderKanban } from 'lucide-react'
-import { Badge } from '@/components/ui/badge'
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
+import { CalendarDays } from 'lucide-react'
 import { MarkdownPreview } from '@/components/memo/MarkdownPreview'
 import { getMemoPreviewContent } from '@/lib/memo/blocks'
 import type { MemoWithProject } from '@/types'
@@ -27,36 +20,32 @@ export function MemoCard({ memo }: Props) {
   const previewContent = getMemoPreviewContent(memo.content, 4)
 
   return (
-    <Card size="sm">
-      <CardHeader>
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0 space-y-1">
-            <CardTitle className="truncate">
-              <Link href={`/memos/${memo.id}`} className="hover:underline">
-                {memo.title}
-              </Link>
-            </CardTitle>
-            <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-              <span className="inline-flex items-center gap-1">
-                <CalendarDays size={12} />
-                {formatDate(memo.updatedAt)}
-              </span>
-              {memo.project && (
-                <span className="inline-flex items-center gap-1">
-                  <FolderKanban size={12} />
-                  {memo.project.name}
-                </span>
-              )}
-            </div>
-          </div>
-          {memo.project && <Badge variant="outline">프로젝트</Badge>}
+    <article className="relative flex flex-col gap-3 rounded-xl border bg-card p-4 shadow-sm transition-shadow hover:shadow-md">
+      <div className="min-w-0 space-y-1.5">
+        {/* 제목 링크가 카드 전체를 덮어 카드 어디를 눌러도 상세로 이동 */}
+        <h3 className="truncate text-sm font-semibold">
+          <Link
+            href={`/memos/${memo.id}`}
+            className="after:absolute after:inset-0 after:rounded-xl"
+          >
+            {memo.title}
+          </Link>
+        </h3>
+        <div className="flex min-w-0 flex-wrap items-center gap-2 text-xs text-muted-foreground">
+          <span className="inline-flex items-center gap-1 tabular-nums">
+            <CalendarDays className="size-3" />
+            {formatDate(memo.updatedAt)}
+          </span>
+          {memo.project && (
+            <span className="max-w-full truncate rounded-full border border-primary/40 px-2 text-primary">
+              {memo.project.name}
+            </span>
+          )}
         </div>
-      </CardHeader>
-      <CardContent>
-        <div className="max-h-24 overflow-hidden text-muted-foreground">
-          <MarkdownPreview content={previewContent} compact />
-        </div>
-      </CardContent>
-    </Card>
+      </div>
+      <div className="max-h-24 overflow-hidden rounded-lg bg-muted/60 px-3 py-2 text-muted-foreground">
+        <MarkdownPreview content={previewContent} compact />
+      </div>
+    </article>
   )
 }

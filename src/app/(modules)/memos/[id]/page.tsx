@@ -1,18 +1,13 @@
 import Link from 'next/link'
 import { notFound, redirect } from 'next/navigation'
-import { ArrowLeft, FolderKanban, PencilLine, Trash2 } from 'lucide-react'
-import { Badge } from '@/components/ui/badge'
+import { ArrowLeft, Calendar, PencilLine, Trash2, UserRound } from 'lucide-react'
 import { Button, buttonVariants } from '@/components/ui/button'
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
+import { Panel } from '@/components/layout/Panel'
 import { MarkdownPreview } from '@/components/memo/MarkdownPreview'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { deleteMemoFormAction } from '../_actions/memo'
+import { cn } from '@/lib/utils'
 
 type Props = {
   params: Promise<{ id: string }>
@@ -52,87 +47,79 @@ export default async function MemoDetailPage({ params }: Props) {
   const canEdit = memo.ownerId === session.user.id
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="space-y-2">
+    <Panel className="flex-1">
+      {/* 문서 헤더: 제목, 프로젝트 태그, 작성자·수정일, 액션 */}
+      <div className="flex shrink-0 flex-wrap items-start justify-between gap-x-6 gap-y-3 border-b px-6 py-4">
+        <div className="flex min-w-0 flex-1 items-start gap-3">
+          {/* 좁은 화면에서는 좌측 목록이 숨겨지므로 목록으로 돌아가는 버튼 제공 */}
           <Link
             href="/memos"
-            className={buttonVariants({ variant: 'ghost', size: 'sm' })}
+            aria-label="메모 목록"
+            title="메모 목록"
+            className={buttonVariants({
+              variant: 'ghost',
+              size: 'icon',
+              className: 'shrink-0 lg:hidden',
+            })}
           >
-            <ArrowLeft size={14} />
-            메모 목록
+            <ArrowLeft />
           </Link>
-          <div className="space-y-1">
+          <div className="min-w-0 space-y-1.5">
             <div className="flex flex-wrap items-center gap-2">
-              <h1 className="text-2xl font-bold">{memo.title}</h1>
-              {memo.project && <Badge variant="outline">프로젝트</Badge>}
+              <h2 className="min-w-0 break-words text-xl font-bold">{memo.title}</h2>
+              {memo.project && (
+                <Link
+                  href={`/projects/${memo.project.id}?tab=memos`}
+                  title="프로젝트 메모 보기"
+                  className="rounded-full border border-primary/40 px-2 text-xs text-primary transition-colors hover:bg-primary/10"
+                >
+                  {memo.project.name}
+                </Link>
+              )}
             </div>
-            <p className="text-sm text-muted-foreground">
-              {memo.owner.name} 작성 · {formatDate(memo.updatedAt)}
+            <p className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
+              <span className="flex items-center gap-1">
+                <UserRound className="size-3.5" />
+                {memo.owner.name}
+              </span>
+              <span className="flex items-center gap-1">
+                <Calendar className="size-3.5" />
+                {formatDate(memo.updatedAt)} 수정
+              </span>
             </p>
           </div>
         </div>
-        <div className="flex flex-wrap gap-2">
-          {canEdit && (
+
+        {canEdit && (
+          <div className="flex shrink-0 gap-1.5">
             <Link
               href={`/memos/${memo.id}/edit`}
-              className={buttonVariants({ variant: 'outline' })}
+              aria-label="메모 수정"
+              title="메모 수정"
+              className={cn(buttonVariants({ variant: 'outline', size: 'icon' }))}
             >
-              <PencilLine size={14} />
-              수정
+              <PencilLine />
             </Link>
-          )}
-          {memo.project && (
-            <Link
-              href={`/projects/${memo.project.id}?tab=memos`}
-              className={buttonVariants({ variant: 'outline' })}
-            >
-              <FolderKanban size={14} />
-              프로젝트 메모
-            </Link>
-          )}
-          {canEdit && (
             <form action={deleteMemoFormAction.bind(null, memo.id)}>
-              <Button variant="destructive" type="submit">
-                <Trash2 size={14} />
-                삭제
+              <Button
+                variant="destructive"
+                type="submit"
+                size="icon"
+                aria-label="메모 삭제"
+                title="메모 삭제"
+              >
+                <Trash2 />
               </Button>
             </form>
-          )}
-        </div>
+          </div>
+        )}
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>내용</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <MarkdownPreview content={memo.content} />
-        </CardContent>
-      </Card>
-
-      <Card size="sm">
-        <CardHeader>
-          <CardTitle>연결 정보</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3 text-sm">
-          <div>
-            <p className="text-xs text-muted-foreground">작성자</p>
-            <p>{memo.owner.name}</p>
-          </div>
-          {memo.project && (
-            <div>
-              <p className="text-xs text-muted-foreground">프로젝트</p>
-              <Link
-                href={`/projects/${memo.project.id}?tab=memos`}
-                className="text-primary underline-offset-4 hover:underline"
-              >
-                {memo.project.name}
-              </Link>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-    </div>
+      <div className="min-h-0 flex-1 overflow-y-auto px-6 py-8">
+        <article className="mx-auto max-w-3xl">
+          <MarkdownPreview content={memo.content} className="text-[15px] leading-7" />
+        </article>
+      </div>
+    </Panel>
   )
 }

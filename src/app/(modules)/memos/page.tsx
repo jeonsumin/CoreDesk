@@ -1,8 +1,9 @@
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
-import { FileText, Plus, Search, X } from 'lucide-react'
-import { Button, buttonVariants } from '@/components/ui/button'
+import { NotepadText, Search, X } from 'lucide-react'
+import { buttonVariants } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { EmptyState, Panel, PanelHeader, PanelToolbar } from '@/components/layout/Panel'
 import { auth } from '@/lib/auth'
 import { parseMemoSearchParams } from '@/lib/memo/validation'
 import { prisma } from '@/lib/prisma'
@@ -40,65 +41,62 @@ export default async function MemosPage({ searchParams }: Props) {
   })
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold">메모</h1>
-          <p className="text-muted-foreground">
-            {q ? `제목 검색 결과 ${memos.length}개` : `내 메모 ${memos.length}개`}
-          </p>
-        </div>
-        <Link href="/memos/new" className={buttonVariants()}>
-          <Plus size={14} />
-          새 메모
-        </Link>
-      </div>
-
-      <div className="space-y-4">
-        <form className="flex flex-wrap gap-2">
-          <div className="min-w-[220px] flex-1">
-            <Input
-              name="q"
-              defaultValue={q ?? ''}
-              placeholder="제목으로 검색"
-              aria-label="메모 제목 검색"
-            />
-          </div>
-          <Button type="submit" variant="outline">
-            <Search size={14} />
-            검색
-          </Button>
-          {q && (
-            <Link href="/memos" className={buttonVariants({ variant: 'ghost' })}>
-              <X size={14} />
+    <Panel className="flex-1">
+      <PanelHeader
+        icon={<NotepadText />}
+        title={q ? `'${q}' 검색 결과` : '최근 메모'}
+        count={memos.length}
+        actions={
+          q && (
+            <Link
+              href="/memos"
+              className={buttonVariants({ variant: 'ghost', size: 'sm' })}
+            >
+              <X />
               초기화
             </Link>
-          )}
-        </form>
+          )
+        }
+      />
 
+      {/* 좁은 화면에서는 좌측 목록 패널(검색 포함)이 숨겨지므로 검색창을 여기서 제공 */}
+      <PanelToolbar className="lg:hidden">
+        <form className="relative flex-1">
+          <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            name="q"
+            defaultValue={q ?? ''}
+            placeholder="제목으로 검색..."
+            aria-label="메모 제목 검색"
+            className="h-9 pl-9"
+          />
+        </form>
+      </PanelToolbar>
+
+      <div className="flex-1 overflow-y-auto p-6">
         {memos.length === 0 ? (
-          <div className="rounded-lg border border-dashed p-12 text-center">
-            <FileText
-              size={40}
-              className="mx-auto mb-3 text-muted-foreground"
-            />
-            <p className="mb-4 text-muted-foreground">
-              {q
-                ? '검색된 메모가 없습니다.'
-                : '아직 작성한 메모가 없습니다.'}
-            </p>
-            <Link href="/memos/new" className={buttonVariants()}>
-              첫 메모 작성하기
-            </Link>
-          </div>
+          <EmptyState
+            icon={<NotepadText />}
+            title={q ? '검색된 메모가 없습니다.' : '아직 작성한 메모가 없습니다.'}
+            description={
+              q
+                ? '다른 검색어로 찾아보거나 새 메모를 작성하세요.'
+                : '회의록, 아이디어, 할 일을 블록 에디터로 정리해 보세요.'
+            }
+            action={
+              <Link href="/memos/new" className={buttonVariants()}>
+                첫 메모 작성하기
+              </Link>
+            }
+          />
         ) : (
-          <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 2xl:grid-cols-3">
             {memos.map((memo) => (
               <MemoCard key={memo.id} memo={memo} />
             ))}
           </div>
         )}
       </div>
-    </div>
+    </Panel>
   )
 }

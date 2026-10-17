@@ -1,21 +1,15 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { FolderPlus } from 'lucide-react'
+import { FormPanel } from '@/components/layout/FormPanel'
 import { ProjectForm } from '../_components/ProjectForm'
 
 export default function NewProjectPage() {
   return (
-    <div className="max-w-2xl mx-auto">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold">새 프로젝트</h1>
-        <p className="text-muted-foreground">프로젝트 정보를 입력하세요</p>
-      </div>
-      <Card>
-        <CardHeader>
-          <CardTitle>프로젝트 정보</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ProjectForm />
-        </CardContent>
-      </Card>
-    </div>
+    <FormPanel
+      icon={<FolderPlus />}
+      title="새 프로젝트 만들기"
+      description="프로젝트를 만들면 내가 PM으로 등록됩니다. 팀원은 만든 뒤 멤버 관리에서 초대하세요."
+    >
+      <ProjectForm />
+    </FormPanel>
   )
 }

@@ -1,6 +1,5 @@
 import Link from 'next/link'
 import { AlertTriangle, ArrowRight } from 'lucide-react'
-import { Badge } from '@/components/ui/badge'
 import type { Project, Task } from '@/types'
 
 type Props = {
@@ -12,24 +11,22 @@ export function RiskBanner({ riskProjects, nowMs }: Props) {
   if (riskProjects.length === 0) return null
 
   return (
-    <div className="shrink-0 rounded-lg border border-orange-200 bg-orange-50/80 p-4">
+    <div className="shrink-0 rounded-xl border border-orange-200 bg-orange-50 p-4">
       <div className="mb-3 flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <span className="flex size-8 items-center justify-center rounded-md bg-orange-100 text-orange-700">
+        <div className="flex items-center gap-3">
+          <span className="flex size-8 items-center justify-center rounded-lg bg-orange-100 text-orange-600">
             <AlertTriangle className="size-4" />
           </span>
           <div>
-            <p className="text-sm font-semibold text-orange-900">
-              마감 리스크 {riskProjects.length}건
+            <p className="text-sm font-semibold text-foreground">
+              마감 리스크 <span className="text-orange-600 tabular-nums">{riskProjects.length}건</span>
             </p>
-            <p className="text-xs text-orange-700">
-              D-7 이하 · 진행률 50% 미만
-            </p>
+            <p className="text-xs text-muted-foreground">D-7 이하 · 진행률 50% 미만</p>
           </div>
         </div>
-        <Badge className="border-orange-200 bg-white text-orange-700 text-xs">
+        <span className="rounded-md border border-orange-200 bg-card px-2 py-0.5 text-xs font-semibold text-orange-600">
           주의
-        </Badge>
+        </span>
       </div>
       <div className="grid gap-2 lg:grid-cols-2">
         {riskProjects.map((p) => {
@@ -44,19 +41,23 @@ export function RiskBanner({ riskProjects, nowMs }: Props) {
             <Link
               key={p.id}
               href={`/projects/${p.id}`}
-              className="flex items-center justify-between gap-3 rounded-md border border-orange-200 bg-white px-3 py-2 text-sm text-orange-900 transition-colors hover:bg-orange-100/50"
+              className="flex items-center justify-between gap-3 rounded-lg border border-orange-200 bg-card px-3 py-2 text-sm transition-colors hover:bg-orange-100/50"
             >
-              <span className="min-w-0 truncate">
+              <span className="min-w-0 truncate font-medium">
                 {p.name}
-                <span className="ml-2 text-xs text-orange-700">
+                <span className="ml-2 text-xs font-normal text-muted-foreground tabular-nums">
                   {progress}%
                 </span>
               </span>
-              <span className="flex shrink-0 items-center gap-1 text-xs font-medium text-orange-700">
+              <span
+                className={
+                  daysLeft !== null && daysLeft < 0
+                    ? 'flex shrink-0 items-center gap-1 text-xs font-semibold text-red-600'
+                    : 'flex shrink-0 items-center gap-1 text-xs font-semibold text-orange-600'
+                }
+              >
                 {daysLeft !== null &&
-                  (daysLeft < 0
-                    ? `D+${Math.abs(daysLeft)} 초과`
-                    : `D-${daysLeft}`)}
+                  (daysLeft < 0 ? `D+${Math.abs(daysLeft)} 초과` : `D-${daysLeft}`)}
                 <ArrowRight className="size-3" />
               </span>
             </Link>

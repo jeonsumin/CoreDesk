@@ -1,21 +1,25 @@
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { buttonVariants } from '@/components/ui/button'
-import { cn } from '@/lib/utils'
 import { ProjectSummaryCard } from './_components/ProjectSummaryCard'
 import { RiskBanner } from './_components/RiskBanner'
+import { PageHeader } from '@/components/layout/PageHeader'
+import { StatCard } from '@/components/layout/StatCard'
+import { EmptyState, Panel, PanelHeader } from '@/components/layout/Panel'
 import { TodayTaskList } from './_components/TodayTaskList'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
-import type { ReactNode } from 'react'
 import {
   AlertTriangle,
   ArrowRight,
+  CalendarCheck,
   CheckCircle2,
   ClipboardList,
   FolderKanban,
+  Plus,
   Timer,
 } from 'lucide-react'
+import { cn } from '@/lib/utils'
 
 export default async function DashboardPage() {
   const session = await auth()
@@ -82,55 +86,48 @@ export default async function DashboardPage() {
   const criticalTaskCount = todayTasks.length + weekTasks.length
 
   return (
-    <div className="flex h-full min-h-0 flex-col gap-5">
-      <div className="flex shrink-0 flex-col gap-3 border-b pb-4 lg:flex-row lg:items-end lg:justify-between">
-        <div>
-          <p className="text-sm text-muted-foreground">
-            {session?.user?.name}님의 워크스페이스
-          </p>
-          <h1 className="text-2xl font-bold">프로젝트 운영 현황</h1>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Link
-            href="/my-tasks"
-            className={buttonVariants({ variant: 'outline', size: 'sm' })}
-          >
-            <ClipboardList data-icon="inline-start" />
-            내 태스크
-          </Link>
-          <Link
-            href="/projects/new"
-            className={buttonVariants({ size: 'sm' })}
-          >
-            <FolderKanban data-icon="inline-start" />
-            프로젝트 생성
-          </Link>
-        </div>
-      </div>
+    <div className="flex h-full min-h-0 flex-col gap-6">
+      <PageHeader
+        title="대시보드"
+        actions={
+          <>
+            <Link href="/my-tasks" className={cn(buttonVariants({ variant: 'outline', size: 'lg' }))}>
+              <ClipboardList data-icon="inline-start" />
+              내 태스크
+            </Link>
+            <Link href="/projects/new" className={buttonVariants({ size: 'lg' })}>
+              <FolderKanban data-icon="inline-start" />
+              프로젝트 만들기
+            </Link>
+          </>
+        }
+      />
 
       <RiskBanner riskProjects={riskProjects} nowMs={nowMs} />
 
       <div className="grid shrink-0 grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
-        <DashboardMetricCard
+        <StatCard
           icon={<FolderKanban className="size-4" />}
+          tone="primary"
           label="참여 프로젝트"
           value={projects.length}
           meta={`진행 중 ${inProgressProjects}개`}
         />
-        <DashboardMetricCard
+        <StatCard
           icon={<CheckCircle2 className="size-4" />}
+          tone="success"
           label="태스크 완료율"
           value={`${taskProgress}%`}
           meta={`${doneTasks}/${totalTasks} 완료`}
         />
-        <DashboardMetricCard
+        <StatCard
           icon={<Timer className="size-4" />}
           label="처리 필요"
           value={criticalTaskCount}
           meta={`오늘 ${todayTasks.length}개 · 이번 주 ${weekTasks.length}개`}
           tone={criticalTaskCount > 0 ? 'warning' : 'default'}
         />
-        <DashboardMetricCard
+        <StatCard
           icon={<AlertTriangle className="size-4" />}
           label="리스크"
           value={riskProjects.length}
@@ -140,38 +137,43 @@ export default async function DashboardPage() {
       </div>
 
       <div className="grid min-h-0 flex-1 grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
-        <section className="min-h-0 overflow-hidden rounded-lg border bg-background">
-          <div className="flex items-center justify-between border-b px-4 py-3">
-            <div>
-              <h2 className="text-base font-semibold">프로젝트 진행판</h2>
-              <p className="text-xs text-muted-foreground">
-                최근 업데이트 순 · 취소 프로젝트 제외
-              </p>
-            </div>
-            <Link
-              href="/projects"
-              className="inline-flex items-center gap-1 text-sm text-primary hover:underline"
-            >
-              전체 보기
-              <ArrowRight className="size-3.5" />
-            </Link>
-          </div>
+        <Panel>
+          <PanelHeader
+            icon={<FolderKanban />}
+            title="프로젝트 진행판"
+            count={projects.length}
+            actions={
+              <>
+                <span className="hidden text-xs text-muted-foreground md:inline">
+                  최근 업데이트 순 · 취소 프로젝트 제외
+                </span>
+                <Link
+                  href="/projects"
+                  className="inline-flex items-center gap-1 text-sm text-primary hover:underline"
+                >
+                  전체 보기
+                  <ArrowRight className="size-3.5" />
+                </Link>
+              </>
+            }
+          />
 
           {projects.length === 0 ? (
-            <div className="flex h-72 items-center justify-center p-6">
-              <div className="max-w-sm text-center">
-                <FolderKanban className="mx-auto mb-3 size-8 text-muted-foreground" />
-                <p className="font-medium">참여 중인 프로젝트가 없습니다.</p>
-                <Link
-                  href="/projects/new"
-                  className={cn(buttonVariants({ size: 'sm' }), 'mt-4')}
-                >
-                  프로젝트 생성
-                </Link>
-              </div>
+            <div className="p-4">
+              <EmptyState
+                icon={<FolderKanban />}
+                title="참여 중인 프로젝트가 없습니다"
+                description="새 프로젝트를 만들어 팀과 진행 상황을 공유하세요."
+                action={
+                  <Link href="/projects/new" className={buttonVariants()}>
+                    <Plus data-icon="inline-start" />
+                    프로젝트 만들기
+                  </Link>
+                }
+              />
             </div>
           ) : (
-            <div className="overflow-auto">
+            <div className="min-h-0 flex-1 overflow-auto">
               <div className="min-w-[720px]">
                 <div className="grid grid-cols-[minmax(220px,1.3fr)_120px_160px_110px] gap-3 border-b bg-muted/30 px-4 py-2 text-xs font-medium text-muted-foreground">
                   <span>프로젝트</span>
@@ -189,95 +191,53 @@ export default async function DashboardPage() {
               </div>
             </div>
           )}
-        </section>
+        </Panel>
 
-        <aside className="min-h-0 overflow-hidden rounded-lg border bg-background">
-          <div className="flex items-center justify-between border-b px-4 py-3">
-            <div>
-              <h2 className="text-base font-semibold">내 작업 큐</h2>
-              <p className="text-xs text-muted-foreground">
-                미완료 마감 태스크
-              </p>
+        <Panel>
+          <PanelHeader
+            icon={<ClipboardList />}
+            title="내 작업 큐"
+            count={criticalTaskCount}
+            actions={
+              <Link
+                href="/my-tasks"
+                className="inline-flex items-center gap-1 text-sm text-primary hover:underline"
+              >
+                이동
+                <ArrowRight className="size-3.5" />
+              </Link>
+            }
+          />
+          {todayTasks.length === 0 && weekTasks.length === 0 ? (
+            <div className="p-4">
+              <EmptyState
+                icon={<CalendarCheck />}
+                title="마감 예정 태스크가 없습니다"
+                description="이번 주까지 처리할 미완료 태스크가 없어요."
+                action={
+                  <Link href="/my-tasks" className={cn(buttonVariants({ variant: 'outline' }))}>
+                    <ClipboardList data-icon="inline-start" />
+                    내 태스크 보기
+                  </Link>
+                }
+              />
             </div>
-            <Link
-              href="/my-tasks"
-              className="inline-flex items-center gap-1 text-sm text-primary hover:underline"
-            >
-              이동
-              <ArrowRight className="size-3.5" />
-            </Link>
-          </div>
-          <div className="max-h-full overflow-auto p-4">
-            {todayTasks.length === 0 && weekTasks.length === 0 ? (
-              <div className="flex h-64 items-center justify-center rounded-lg border border-dashed text-center text-sm text-muted-foreground">
-                마감 예정 태스크가 없습니다.
-              </div>
-            ) : (
-              <div className="space-y-5">
-                <TodayTaskList
-                  tasks={todayTasks}
-                  title="오늘 마감"
-                  nowMs={nowMs}
-                />
-                <TodayTaskList
-                  tasks={weekTasks}
-                  title="이번 주 마감"
-                  nowMs={nowMs}
-                />
-              </div>
-            )}
-          </div>
-        </aside>
-      </div>
-    </div>
-  )
-}
-
-type DashboardMetricCardProps = {
-  icon: ReactNode
-  label: string
-  value: string | number
-  meta: string
-  tone?: 'default' | 'warning' | 'danger'
-}
-
-function DashboardMetricCard({
-  icon,
-  label,
-  value,
-  meta,
-  tone = 'default',
-}: DashboardMetricCardProps) {
-  return (
-    <div
-      className={cn(
-        'rounded-lg border bg-background p-4',
-        tone === 'warning' && 'border-orange-200 bg-orange-50/60',
-        tone === 'danger' && 'border-red-200 bg-red-50/60',
-      )}
-    >
-      <div className="flex items-center justify-between gap-3">
-        <p className="text-sm text-muted-foreground">{label}</p>
-        <span
-          className={cn(
-            'flex size-8 items-center justify-center rounded-md bg-muted text-muted-foreground',
-            tone === 'warning' && 'bg-orange-100 text-orange-700',
-            tone === 'danger' && 'bg-red-100 text-red-700',
+          ) : (
+            <div className="min-h-0 flex-1 overflow-auto">
+              <TodayTaskList
+                tasks={todayTasks}
+                title="오늘 마감"
+                nowMs={nowMs}
+              />
+              <TodayTaskList
+                tasks={weekTasks}
+                title="이번 주 마감"
+                nowMs={nowMs}
+              />
+            </div>
           )}
-        >
-          {icon}
-        </span>
+        </Panel>
       </div>
-      <p
-        className={cn(
-          'mt-3 text-2xl font-bold',
-          tone === 'warning' && 'text-orange-700',
-          tone === 'danger' && 'text-red-700',
-        )}
-      >
-        {value}
-      </p>
-      <p className="mt-1 text-xs text-muted-foreground">{meta}</p>
     </div>
   )
 }

@@ -3,8 +3,8 @@
 import { useTransition } from 'react'
 import { Copy, Globe, Lock } from 'lucide-react'
 import { toast } from 'sonner'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
 import { togglePortfolioPublic } from '../_actions/portfolio'
 
 type Props = {
@@ -37,32 +37,30 @@ export function PortfolioPublicToggle({ id, isPublic }: Props) {
   }
 
   return (
-    <div className="flex items-center gap-2">
-      {isPublic && (
-        <Badge variant="secondary" className="gap-1">
-          <Globe size={12} />
-          공개
-        </Badge>
-      )}
-      <Button
-        type="button"
-        variant={isPublic ? 'outline' : 'secondary'}
-        onClick={handleToggle}
-        disabled={isPending}
+    <div className="flex items-center gap-1.5">
+      <span
+        className={cn(
+          'inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-xs font-semibold',
+          isPublic ? 'border-green-200 bg-green-50 text-green-700' : 'bg-muted text-muted-foreground',
+        )}
       >
-        {isPublic ? <Lock size={14} /> : <Globe size={14} />}
-        <span>{isPending ? '처리 중...' : isPublic ? '비공개로 전환' : '공개로 전환'}</span>
+        {isPublic ? <Globe className="size-3" /> : <Lock className="size-3" />}
+        {isPublic ? '공개' : '비공개'}
+      </span>
+      <Button type="button" variant="outline" onClick={handleToggle} disabled={isPending}>
+        {isPending ? '처리 중...' : isPublic ? '비공개로 전환' : '공개로 전환'}
       </Button>
       {isPublic && (
         <Button
           type="button"
           variant="outline"
+          size="icon"
           onClick={handleCopyUrl}
           disabled={isPending}
+          aria-label="공개 URL 복사"
           title={`/portfolio/${id} 공개 URL 복사`}
         >
-          <Copy size={14} />
-          URL 복사
+          <Copy />
         </Button>
       )}
     </div>

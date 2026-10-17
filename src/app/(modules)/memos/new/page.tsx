@@ -1,16 +1,9 @@
-import Link from 'next/link'
 import { redirect } from 'next/navigation'
-import { ArrowLeft } from 'lucide-react'
-import { buttonVariants } from '@/components/ui/button'
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
+import { FilePlus } from 'lucide-react'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { MemoForm } from '../_components/MemoForm'
+import { FormPanel } from '@/components/layout/FormPanel'
 
 type Props = {
   searchParams: Promise<{ projectId?: string }>
@@ -38,33 +31,12 @@ export default async function NewMemoPage({ searchParams }: Props) {
     : undefined
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6">
-      <div className="space-y-2">
-        <Link
-          href="/memos"
-          className={buttonVariants({ variant: 'ghost', size: 'sm' })}
-        >
-          <ArrowLeft size={14} />
-          메모 목록
-        </Link>
-        <div>
-          <h1 className="text-2xl font-bold">새 메모</h1>
-          <p className="text-sm text-muted-foreground">
-            블록 기반 에디터로 메모를 작성합니다.
-          </p>
-        </div>
-      </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>
-            {defaultProjectId ? '프로젝트 메모 작성' : '메모 작성'}
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <MemoForm projects={projects} defaultProjectId={defaultProjectId} />
-        </CardContent>
-      </Card>
-    </div>
+    <FormPanel wide
+      icon={<FilePlus />}
+      title={defaultProjectId ? '프로젝트 메모 작성' : '새 메모 작성'}
+      description="블록 기반 에디터로 메모를 작성합니다. '/'를 입력하면 블록 종류를 바꿀 수 있습니다."
+    >
+      <MemoForm projects={projects} defaultProjectId={defaultProjectId} />
+    </FormPanel>
   )
 }

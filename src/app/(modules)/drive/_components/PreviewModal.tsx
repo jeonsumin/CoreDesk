@@ -1,16 +1,17 @@
 'use client'
 
 import { useEffect, useState, useTransition } from 'react'
-import { Download, Trash2 } from 'lucide-react'
+import { Download, Loader2, Trash2, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
+  DialogClose,
   DialogContent,
-  DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
 import { formatFileSize } from '@/lib/utils'
 import { deleteFile } from '../_actions/drive'
+import { FileTypeIcon } from './FileTypeIcon'
 import type { DriveFileWithUploader } from '@/types'
 
 type Props = {
@@ -130,38 +131,56 @@ export function PreviewModal({ file, open, onOpenChange }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-3xl">
-        <DialogHeader>
-          <DialogTitle className="pr-8 truncate">{file.name}</DialogTitle>
-          <p className="text-xs text-muted-foreground">
-            {formatFileSize(file.size)} · {file.mimeType} ·{' '}
-            업로더 {file.uploader.name}
-          </p>
-        </DialogHeader>
-
-        <div className="py-1">{body}</div>
-
-        <div className="flex items-center justify-between pt-2">
-          <Button
-            variant="destructive"
-            onClick={handleDelete}
-            disabled={isPending}
-          >
-            <Trash2 size={14} />
-            <span>{isPending ? '삭제 중...' : '삭제'}</span>
-          </Button>
-          <Button
-            render={
-              <a
-                href={`/api/drive/${file.id}?download=1`}
-                download={file.originalName}
-              />
-            }
-          >
-            <Download size={14} />
-            <span>다운로드</span>
-          </Button>
+      <DialogContent showCloseButton={false} className="gap-0 p-0 sm:max-w-3xl">
+        <div className="flex items-center justify-between gap-3 border-b px-6 py-4">
+          <div className="flex min-w-0 items-center gap-3">
+            <FileTypeIcon mime={file.mimeType} className="size-5 shrink-0" />
+            <div className="min-w-0">
+              <DialogTitle className="truncate text-base font-semibold leading-tight">
+                {file.name}
+              </DialogTitle>
+              <p className="mt-1 truncate text-xs text-muted-foreground">
+                {formatFileSize(file.size)} · {file.mimeType} · 업로더 {file.uploader.name}
+              </p>
+            </div>
+          </div>
+          <div className="flex shrink-0 items-center gap-1">
+            <Button
+              variant="ghost"
+              size="icon-lg"
+              aria-label="다운로드"
+              title="다운로드"
+              render={
+                <a
+                  href={`/api/drive/${file.id}?download=1`}
+                  download={file.originalName}
+                />
+              }
+            >
+              <Download />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon-lg"
+              aria-label={isPending ? '삭제 중' : '삭제'}
+              title="삭제"
+              className="text-destructive hover:text-destructive"
+              onClick={handleDelete}
+              disabled={isPending}
+            >
+              {isPending ? <Loader2 className="animate-spin" /> : <Trash2 />}
+            </Button>
+            <DialogClose
+              render={
+                <Button variant="ghost" size="icon-lg" aria-label="닫기" title="닫기" />
+              }
+            >
+              <X />
+            </DialogClose>
+          </div>
         </div>
+
+        <div className="max-h-[75vh] overflow-auto p-6">{body}</div>
       </DialogContent>
     </Dialog>
   )

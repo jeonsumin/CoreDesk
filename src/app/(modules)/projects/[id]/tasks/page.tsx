@@ -9,6 +9,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog'
+import { ListTodo, Plus } from 'lucide-react'
+import { CountBadge, EmptyState, Panel, PanelHeader } from '@/components/layout/Panel'
 import { TaskRow } from './_components/TaskRow'
 import { TaskForm } from './_components/TaskForm'
 import type { TaskStatus } from '@/types'
@@ -70,64 +72,70 @@ export default async function TasksPage({ params, searchParams }: Props) {
     {} as Record<TaskStatus, typeof filteredTasks>,
   )
 
-  return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">태스크</h1>
-          <p className="text-muted-foreground">
-            {project.name} · {project.tasks.length}개
-          </p>
-        </div>
-        <Dialog>
-          <DialogTrigger render={<Button>태스크 추가</Button>} />
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>새 태스크</DialogTitle>
-            </DialogHeader>
-            <TaskForm projectId={id} members={members} />
-          </DialogContent>
-        </Dialog>
-      </div>
+  const newTaskDialog = (trigger: React.ReactElement) => (
+    <Dialog>
+      <DialogTrigger render={trigger} />
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>새 태스크</DialogTitle>
+        </DialogHeader>
+        <TaskForm projectId={id} members={members} />
+      </DialogContent>
+    </Dialog>
+  )
 
-      {project.tasks.length === 0 ? (
-        <div className="rounded-lg border border-dashed p-12 text-center">
-          <p className="text-muted-foreground mb-4">아직 태스크가 없습니다.</p>
-          <Dialog>
-            <DialogTrigger render={<Button>첫 태스크 추가하기</Button>} />
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>새 태스크</DialogTitle>
-              </DialogHeader>
-              <TaskForm projectId={id} members={members} />
-            </DialogContent>
-          </Dialog>
-        </div>
-      ) : (
-        <div className="space-y-6">
-          {statusOrder.map((s) => {
-            const tasks = grouped[s]
-            if (tasks.length === 0) return null
-            return (
-              <div key={s}>
-                <h2 className="text-sm font-semibold text-muted-foreground mb-2">
-                  {statusLabel[s]} ({tasks.length})
-                </h2>
-                <div className="space-y-2">
-                  {tasks.map((task) => (
-                    <TaskRow
-                      key={task.id}
-                      task={task}
-                      projectId={id}
-                      members={members}
-                    />
-                  ))}
-                </div>
-              </div>
-            )
-          })}
-        </div>
-      )}
-    </div>
+  return (
+    <Panel className="flex-1">
+      <PanelHeader
+        icon={<ListTodo />}
+        title={`${project.name} 태스크`}
+        count={project.tasks.length}
+        actions={newTaskDialog(
+          <Button size="icon" aria-label="태스크 추가" title="태스크 추가">
+            <Plus />
+          </Button>,
+        )}
+      />
+
+      <div className="min-h-0 flex-1 overflow-auto p-4">
+        {project.tasks.length === 0 ? (
+          <EmptyState
+            icon={<ListTodo />}
+            title="아직 태스크가 없습니다."
+            description="첫 태스크를 추가해 진행 상황을 관리하세요."
+            action={newTaskDialog(
+              <Button>
+                <Plus data-icon="inline-start" />첫 태스크 추가하기
+              </Button>,
+            )}
+          />
+        ) : (
+          <div className="space-y-6">
+            {statusOrder.map((s) => {
+              const tasks = grouped[s]
+              if (tasks.length === 0) return null
+              return (
+                <section key={s}>
+                  <h3 className="mb-2 flex items-center gap-2 text-sm font-semibold">
+                    {statusLabel[s]}
+                    <CountBadge>{tasks.length}</CountBadge>
+                  </h3>
+                  <div className="border-t">
+                    {tasks.map((task) => (
+                      <TaskRow
+                        key={task.id}
+                        task={task}
+                        projectId={id}
+                        members={members}
+                      />
+                    ))}
+                  </div>
+                </section>
+              )
+            })}
+          </div>
+        )}
+      </div>
+    </Panel>
   )
 }

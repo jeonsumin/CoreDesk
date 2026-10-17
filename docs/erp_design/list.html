@@ -1,0 +1,627 @@
+<html lang="en" class="light">
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" type="image/svg+xml" href="./vite.svg">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vite + React + TS</title>
+    <script type="module" crossorigin="" src="./assets/index.js"></script>
+    <link rel="stylesheet" crossorigin="" href="./assets/index.css">
+    <style data-styled="active" data-styled-version="6.1.19"></style>
+</head>
+<body class="mode-app" style="">
+<div id="root">
+    <div class="app">
+        <div class="app-container h-screen overflow-hidden bg-background mode-app-container">
+            <div class="container h-full flex flex-col p-8">
+                <div class="flex-shrink-0">
+                    <div class="w-full">
+                        <div class="flex justify-between items-center w-full">
+                            <div class="flex items-center gap-6"><h1
+                                    class="text-3xl font-bold text-foreground whitespace-nowrap">프로젝트 관리</h1>
+                                <div class="inline-flex items-center gap-1 p-1 bg-muted rounded-xl">
+                                    <button class="relative inline-flex items-center justify-center gap-1.5 px-4 py-1.5 text-sm font-medium rounded-lg transition-all duration-300 ease-in-out min-w-[80px] bg-primary text-primary-foreground shadow-md border border-primary/20 scale-[1.02]">
+                                        <span class="relative z-10">진행중</span></button>
+                                    <button class="relative inline-flex items-center justify-center gap-1.5 px-4 py-1.5 text-sm font-medium rounded-lg transition-all duration-300 ease-in-out min-w-[80px] text-muted-foreground hover:text-foreground hover:bg-muted/50">
+                                        <span class="relative z-10">종료</span></button>
+                                    <button class="relative inline-flex items-center justify-center gap-1.5 px-4 py-1.5 text-sm font-medium rounded-lg transition-all duration-300 ease-in-out min-w-[80px] text-muted-foreground hover:text-foreground hover:bg-muted/50">
+                                        <span class="relative z-10">전체</span></button>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-2 justify-end">
+                                <div class="flex items-center gap-2">
+                                    <button class="inline-flex items-center justify-center h-9 w-9 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+                                            data-state="closed">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                                             viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                             stroke-linecap="round" stroke-linejoin="round"
+                                             class="lucide lucide-folder-plus h-4 w-4" aria-hidden="true">
+                                            <path d="M12 10v6"></path>
+                                            <path d="M9 13h6"></path>
+                                            <path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"></path>
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex-1 min-h-0 mt-6">
+                    <div class="flex h-full gap-4" style="--sidebar-width: 280px;">
+                        <div class="transition-all duration-300 overflow-hidden flex-shrink-0"
+                             style="width: 280px; min-width: 280px;">
+                            <aside class="sidebar-content project-sidebar w-full h-full">
+                                <div class="h-full bg-card rounded-lg shadow-lg border flex flex-col">
+                                    <div class="border-b px-4 py-3 flex-shrink-0">
+                                        <div class="flex items-center justify-between mb-3">
+                                            <div class="flex items-center gap-2">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                                                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                                                     class="lucide lucide-folder-kanban h-5 w-5 text-primary"
+                                                     aria-hidden="true">
+                                                    <path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"></path>
+                                                    <path d="M8 10v4"></path>
+                                                    <path d="M12 10v2"></path>
+                                                    <path d="M16 10v6"></path>
+                                                </svg>
+                                                <span class="font-semibold">프로젝트</span>
+                                                <div class="inline-flex items-center rounded-md border px-2.5 py-0.5 font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80 text-xs">
+                                                    1
+                                                </div>
+                                            </div>
+                                            <button class="p-1.5 rounded hover:bg-accent">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                                                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                                                     class="lucide lucide-chevron-left h-4 w-4" aria-hidden="true">
+                                                    <path d="m15 18-6-6 6-6"></path>
+                                                </svg>
+                                            </button>
+                                        </div>
+                                        <div class="relative">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                                                 viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                                 stroke-linecap="round" stroke-linejoin="round"
+                                                 class="lucide lucide-search absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground"
+                                                 aria-hidden="true">
+                                                <path d="m21 21-4.34-4.34"></path>
+                                                <circle cx="11" cy="11" r="8"></circle>
+                                            </svg>
+                                            <input class="flex w-full rounded-md border border-input bg-transparent px-3 py-1 text-base text-foreground shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm pl-9 h-9"
+                                                   placeholder="프로젝트 검색..." value=""></div>
+                                    </div>
+                                    <div class="px-3 py-2 border-b flex-shrink-0 flex items-center gap-1">
+                                        <button class="p-2 rounded-lg transition-colors hover:bg-accent hover:text-accent-foreground text-muted-foreground"
+                                                data-state="closed">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                                                 viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                                 stroke-linecap="round" stroke-linejoin="round"
+                                                 class="lucide lucide-trending-up h-4 w-4" aria-hidden="true">
+                                                <path d="M16 7h6v6"></path>
+                                                <path d="m22 7-8.5 8.5-5-5L2 17"></path>
+                                            </svg>
+                                        </button>
+                                        <button class="p-2 rounded-lg transition-colors bg-primary text-primary-foreground"
+                                                data-state="closed">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                                                 viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                                 stroke-linecap="round" stroke-linejoin="round"
+                                                 class="lucide lucide-clock h-4 w-4" aria-hidden="true">
+                                                <circle cx="12" cy="12" r="10"></circle>
+                                                <polyline points="12 6 12 12 16 14"></polyline>
+                                            </svg>
+                                        </button>
+                                        <button class="p-2 rounded-lg transition-colors hover:bg-accent hover:text-accent-foreground text-muted-foreground"
+                                                data-state="closed">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                                                 viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                                 stroke-linecap="round" stroke-linejoin="round"
+                                                 class="lucide lucide-refresh-cw h-4 w-4" aria-hidden="true">
+                                                <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"></path>
+                                                <path d="M21 3v5h-5"></path>
+                                                <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"></path>
+                                                <path d="M8 16H3v5"></path>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                    <div dir="ltr" class="relative overflow-hidden flex-1"
+                                         style="position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;">
+                                        <style>[data-radix-scroll-area-viewport] {
+                                            scrollbar-width: none;
+                                            -ms-overflow-style: none;
+                                            -webkit-overflow-scrolling: touch;
+                                        }
+
+                                        [data-radix-scroll-area-viewport]::-webkit-scrollbar {
+                                            display: none
+                                        }</style>
+                                        <div data-radix-scroll-area-viewport=""
+                                             class="h-full w-full max-h-[inherit] rounded-[inherit]"
+                                             style="overflow: hidden scroll;">
+                                            <div style="min-width: 100%; display: table;">
+                                                <div class="p-2">
+                                                    <div class="mb-1">
+                                                        <button class="w-full flex flex-col px-3 py-2 rounded-lg transition-colors text-left overflow-hidden hover:bg-accent hover:text-accent-foreground">
+                                                            <div class="flex items-center gap-2 w-full">
+                                                                <div class="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
+                                                                     style="background-color: rgb(132, 204, 22);">
+                                                                    <svg xmlns="http://www.w3.org/2000/svg" width="24"
+                                                                         height="24" viewBox="0 0 24 24" fill="none"
+                                                                         stroke="currentColor" stroke-width="2"
+                                                                         stroke-linecap="round" stroke-linejoin="round"
+                                                                         class="lucide lucide-folder-kanban h-4 w-4 text-white"
+                                                                         aria-hidden="true">
+                                                                        <path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"></path>
+                                                                        <path d="M8 10v4"></path>
+                                                                        <path d="M12 10v2"></path>
+                                                                        <path d="M16 10v6"></path>
+                                                                    </svg>
+                                                                </div>
+                                                                <div class="flex-1 min-w-0">
+                                                                    <div class="flex items-center gap-2"><span
+                                                                            class="font-medium text-sm truncate"
+                                                                            style="max-width: 140px;">쿠팡 CIC 웹사이트 구축</span>
+                                                                    </div>
+                                                                    <div class="flex items-center gap-1.5 text-xs text-muted-foreground">
+                                                                        <span>BB-CIC-WEB</span><span>·</span><span
+                                                                            class="flex items-center gap-0.5"><svg
+                                                                            xmlns="http://www.w3.org/2000/svg"
+                                                                            width="24" height="24" viewBox="0 0 24 24"
+                                                                            fill="none" stroke="currentColor"
+                                                                            stroke-width="2" stroke-linecap="round"
+                                                                            stroke-linejoin="round"
+                                                                            class="lucide lucide-users h-3 w-3"
+                                                                            aria-hidden="true"><path
+                                                                            d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><path
+                                                                            d="M16 3.128a4 4 0 0 1 0 7.744"></path><path
+                                                                            d="M22 21v-2a4 4 0 0 0-3-3.87"></path><circle
+                                                                            cx="9" cy="7" r="4"></circle></svg>7</span>
+                                                                    </div>
+                                                                </div>
+                                                                <svg xmlns="http://www.w3.org/2000/svg" width="24"
+                                                                     height="24" viewBox="0 0 24 24" fill="none"
+                                                                     stroke="currentColor" stroke-width="2"
+                                                                     stroke-linecap="round" stroke-linejoin="round"
+                                                                     class="lucide lucide-chevron-right h-4 w-4 text-muted-foreground flex-shrink-0"
+                                                                     aria-hidden="true">
+                                                                    <path d="m9 18 6-6-6-6"></path>
+                                                                </svg>
+                                                            </div>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </aside>
+                        </div>
+                        <div class="flex-1 relative">
+                            <div class="h-full overflow-hidden">
+                                <div class="h-full flex flex-col bg-card rounded-lg shadow-lg border">
+                                    <div data-state="open" class="flex-shrink-0">
+                                        <div class="p-4 border-b">
+                                            <div class="flex items-center justify-between">
+                                                <button class="gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&amp;_svg]:pointer-events-none [&amp;_svg]:size-4 [&amp;_svg]:shrink-0 hover:text-accent-foreground flex-1 flex items-center justify-between p-2 h-auto hover:bg-accent/50"
+                                                        type="button" aria-controls="radix-«r1eq»" aria-expanded="true"
+                                                        data-state="open">
+                                                    <div class="flex items-center gap-2">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                                                             viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                                             stroke-width="2" stroke-linecap="round"
+                                                             stroke-linejoin="round"
+                                                             class="lucide lucide-chart-column h-5 w-5 text-primary"
+                                                             aria-hidden="true">
+                                                            <path d="M3 3v16a2 2 0 0 0 2 2h16"></path>
+                                                            <path d="M18 17V9"></path>
+                                                            <path d="M13 17V5"></path>
+                                                            <path d="M8 17v-3"></path>
+                                                        </svg>
+                                                        <h2 class="text-lg font-bold">프로젝트별 투입시간 통계</h2></div>
+                                                    <div class="flex items-center gap-3">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                                                             viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                                             stroke-width="2" stroke-linecap="round"
+                                                             stroke-linejoin="round"
+                                                             class="lucide lucide-chevron-up h-5 w-5 text-muted-foreground"
+                                                             aria-hidden="true">
+                                                            <path d="m18 15-6-6-6 6"></path>
+                                                        </svg>
+                                                    </div>
+                                                </button>
+                                                <button class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&amp;_svg]:pointer-events-none [&amp;_svg]:size-4 [&amp;_svg]:shrink-0 border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground h-8 w-8 ml-2"
+                                                        data-state="closed">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                                                         viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                                         stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                                                         class="lucide lucide-refresh-cw h-4 w-4" aria-hidden="true">
+                                                        <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"></path>
+                                                        <path d="M21 3v5h-5"></path>
+                                                        <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"></path>
+                                                        <path d="M8 16H3v5"></path>
+                                                    </svg>
+                                                </button>
+                                            </div>
+                                            <div data-state="open" id="radix-«r1eq»" class="pt-4"
+                                                 style="transition-duration: 0s; animation-name: none; --radix-collapsible-content-height: 98px; --radix-collapsible-content-width: 2086px;">
+                                                <div class="grid grid-cols-4 gap-3">
+                                                    <div class="rounded-xl border text-card-foreground shadow p-4 bg-background flex flex-col justify-between min-h-[80px]">
+                                                        <div class="flex items-center gap-2 text-muted-foreground">
+                                                            <svg xmlns="http://www.w3.org/2000/svg" width="24"
+                                                                 height="24" viewBox="0 0 24 24" fill="none"
+                                                                 stroke="currentColor" stroke-width="2"
+                                                                 stroke-linecap="round" stroke-linejoin="round"
+                                                                 class="lucide lucide-folder-kanban h-4 w-4"
+                                                                 aria-hidden="true">
+                                                                <path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"></path>
+                                                                <path d="M8 10v4"></path>
+                                                                <path d="M12 10v2"></path>
+                                                                <path d="M16 10v6"></path>
+                                                            </svg>
+                                                            <span class="text-sm">프로젝트</span></div>
+                                                        <p class="text-lg font-bold text-right">2개</p></div>
+                                                    <div class="rounded-xl border text-card-foreground shadow p-4 bg-background flex flex-col justify-between min-h-[80px]">
+                                                        <div class="flex items-center gap-2 text-muted-foreground">
+                                                            <svg xmlns="http://www.w3.org/2000/svg" width="24"
+                                                                 height="24" viewBox="0 0 24 24" fill="none"
+                                                                 stroke="currentColor" stroke-width="2"
+                                                                 stroke-linecap="round" stroke-linejoin="round"
+                                                                 class="lucide lucide-users h-4 w-4" aria-hidden="true">
+                                                                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+                                                                <path d="M16 3.128a4 4 0 0 1 0 7.744"></path>
+                                                                <path d="M22 21v-2a4 4 0 0 0-3-3.87"></path>
+                                                                <circle cx="9" cy="7" r="4"></circle>
+                                                            </svg>
+                                                            <span class="text-sm">총 투입 인원</span></div>
+                                                        <p class="text-lg font-bold text-right text-primary">10명</p>
+                                                    </div>
+                                                    <div class="rounded-xl border text-card-foreground shadow p-4 bg-background flex flex-col justify-between min-h-[80px]">
+                                                        <div class="flex items-center gap-2 text-muted-foreground">
+                                                            <svg xmlns="http://www.w3.org/2000/svg" width="24"
+                                                                 height="24" viewBox="0 0 24 24" fill="none"
+                                                                 stroke="currentColor" stroke-width="2"
+                                                                 stroke-linecap="round" stroke-linejoin="round"
+                                                                 class="lucide lucide-clock h-4 w-4" aria-hidden="true">
+                                                                <circle cx="12" cy="12" r="10"></circle>
+                                                                <polyline points="12 6 12 12 16 14"></polyline>
+                                                            </svg>
+                                                            <span class="text-sm">총 투입 시간</span></div>
+                                                        <p class="text-lg font-bold text-right text-chart-3">0.0h</p>
+                                                    </div>
+                                                    <div class="rounded-xl border text-card-foreground shadow p-4 bg-background flex flex-col justify-between min-h-[80px]">
+                                                        <div class="flex items-center gap-2 text-muted-foreground">
+                                                            <svg xmlns="http://www.w3.org/2000/svg" width="24"
+                                                                 height="24" viewBox="0 0 24 24" fill="none"
+                                                                 stroke="currentColor" stroke-width="2"
+                                                                 stroke-linecap="round" stroke-linejoin="round"
+                                                                 class="lucide lucide-trending-up h-4 w-4"
+                                                                 aria-hidden="true">
+                                                                <path d="M16 7h6v6"></path>
+                                                                <path d="m22 7-8.5 8.5-5-5L2 17"></path>
+                                                            </svg>
+                                                            <span class="text-sm">평균 투입율</span></div>
+                                                        <p class="text-lg font-bold text-right text-chart-1">0.0%</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="flex-shrink-0 px-6 py-3 border-b bg-muted/30">
+                                        <h3 class="text-base font-semibold flex items-center gap-2">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                                                 viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                                 stroke-linecap="round" stroke-linejoin="round"
+                                                 class="lucide lucide-folder-kanban h-5 w-5 text-muted-foreground"
+                                                 aria-hidden="true">
+                                                <path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"></path>
+                                                <path d="M8 10v4"></path>
+                                                <path d="M12 10v2"></path>
+                                                <path d="M16 10v6"></path>
+                                            </svg>
+                                            프로젝트별 현황
+                                            <div class="inline-flex items-center rounded-md border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80 ml-2">
+                                                2
+                                            </div>
+                                        </h3>
+                                    </div>
+                                    <div dir="ltr" class="relative overflow-hidden flex-1"
+                                         style="position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;">
+                                        <style>[data-radix-scroll-area-viewport] {
+                                            scrollbar-width: none;
+                                            -ms-overflow-style: none;
+                                            -webkit-overflow-scrolling: touch;
+                                        }
+
+                                        [data-radix-scroll-area-viewport]::-webkit-scrollbar {
+                                            display: none
+                                        }</style>
+                                        <div data-radix-scroll-area-viewport=""
+                                             class="h-full w-full max-h-[inherit] rounded-[inherit]"
+                                             style="overflow: hidden scroll;">
+                                            <div style="min-width: 100%; display: table;">
+                                                <div class="p-6">
+                                                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                                                        <div class="rounded-xl border bg-card text-card-foreground shadow p-4 h-full flex flex-col">
+                                                            <div class="flex items-start gap-3 mb-4">
+                                                                <div class="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
+                                                                     style="background-color: rgb(0, 82, 204);">
+                                                                    <svg xmlns="http://www.w3.org/2000/svg" width="24"
+                                                                         height="24" viewBox="0 0 24 24" fill="none"
+                                                                         stroke="currentColor" stroke-width="2"
+                                                                         stroke-linecap="round" stroke-linejoin="round"
+                                                                         class="lucide lucide-folder-kanban h-5 w-5 text-white"
+                                                                         aria-hidden="true">
+                                                                        <path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"></path>
+                                                                        <path d="M8 10v4"></path>
+                                                                        <path d="M12 10v2"></path>
+                                                                        <path d="M16 10v6"></path>
+                                                                    </svg>
+                                                                </div>
+                                                                <div class="flex-1 min-w-0"><h3
+                                                                        class="font-semibold text-sm truncate">화담숲
+                                                                    포토Pin</h3>
+                                                                    <p class="text-xs text-muted-foreground">
+                                                                        BB-H-PIN</p></div>
+                                                                <div class="inline-flex items-center rounded-md border px-2.5 py-0.5 font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 text-[10px] flex-shrink-0 border-chart-4 text-chart-4">
+                                                                    0.0%
+                                                                </div>
+                                                            </div>
+                                                            <div class="flex items-center gap-2 text-xs text-muted-foreground mb-3">
+                                                                <svg xmlns="http://www.w3.org/2000/svg" width="24"
+                                                                     height="24" viewBox="0 0 24 24" fill="none"
+                                                                     stroke="currentColor" stroke-width="2"
+                                                                     stroke-linecap="round" stroke-linejoin="round"
+                                                                     class="lucide lucide-calendar h-3 w-3"
+                                                                     aria-hidden="true">
+                                                                    <path d="M8 2v4"></path>
+                                                                    <path d="M16 2v4"></path>
+                                                                    <rect width="18" height="18" x="3" y="4"
+                                                                          rx="2"></rect>
+                                                                    <path d="M3 10h18"></path>
+                                                                </svg>
+                                                                <span>2026-05-01 ~ 미정</span><span class="text-[10px]">(3개월)</span>
+                                                            </div>
+                                                            <div class="grid grid-cols-2 gap-2 mb-4">
+                                                                <div class="bg-muted/50 rounded-lg p-2"><p
+                                                                        class="text-[10px] text-muted-foreground">예상
+                                                                    투입</p>
+                                                                    <p class="text-sm font-semibold">-</p></div>
+                                                                <div class="bg-muted/50 rounded-lg p-2"><p
+                                                                        class="text-[10px] text-muted-foreground">실제
+                                                                    투입</p>
+                                                                    <p class="text-sm font-semibold">0h</p></div>
+                                                            </div>
+                                                            <div class="mb-4">
+                                                                <div class="flex items-center justify-between text-xs mb-1">
+                                                                    <span class="text-muted-foreground">투입율</span><span
+                                                                        class="font-medium text-chart-4">0.0%</span>
+                                                                </div>
+                                                                <div aria-valuemax="100" aria-valuemin="0"
+                                                                     role="progressbar" data-state="indeterminate"
+                                                                     data-max="100"
+                                                                     class="relative w-full overflow-hidden rounded-full bg-primary/20 h-2 [&amp;&gt;div]:bg-chart-4">
+                                                                    <div data-state="indeterminate" data-max="100"
+                                                                         class="h-full w-full flex-1 bg-primary transition-all"
+                                                                         style="transform: translateX(-100%);"></div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="flex-1 min-h-0">
+                                                                <div class="flex items-center justify-between mb-2">
+                                                                    <span class="text-xs font-medium text-muted-foreground">투입 인력 (3명)</span><span
+                                                                        class="text-xs text-muted-foreground">합계: 0.0h</span>
+                                                                </div>
+                                                                <div class="space-y-1.5 max-h-[150px] overflow-y-auto">
+                                                                    <div class="flex items-center justify-between py-1.5 px-2 bg-muted/30 rounded">
+                                                                        <div class="flex items-center gap-2">
+                                                                            <div class="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center">
+                                                                                <span class="text-[9px] font-medium text-primary">이</span>
+                                                                            </div>
+                                                                            <span class="text-xs font-medium truncate max-w-[60px]">이주미</span>
+                                                                        </div>
+                                                                        <div class="flex items-center gap-2"><span
+                                                                                class="text-[10px] text-muted-foreground">0.0h</span><span
+                                                                                class="text-xs font-semibold min-w-[40px] text-right text-chart-4">0.0%</span>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="flex items-center justify-between py-1.5 px-2 bg-muted/30 rounded">
+                                                                        <div class="flex items-center gap-2">
+                                                                            <div class="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center">
+                                                                                <span class="text-[9px] font-medium text-primary">정</span>
+                                                                            </div>
+                                                                            <span class="text-xs font-medium truncate max-w-[60px]">정민희</span>
+                                                                        </div>
+                                                                        <div class="flex items-center gap-2"><span
+                                                                                class="text-[10px] text-muted-foreground">0.0h</span><span
+                                                                                class="text-xs font-semibold min-w-[40px] text-right text-chart-4">0.0%</span>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="flex items-center justify-between py-1.5 px-2 bg-muted/30 rounded">
+                                                                        <div class="flex items-center gap-2">
+                                                                            <div class="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center">
+                                                                                <span class="text-[9px] font-medium text-primary">안</span>
+                                                                            </div>
+                                                                            <span class="text-xs font-medium truncate max-w-[60px]">안혜진</span>
+                                                                        </div>
+                                                                        <div class="flex items-center gap-2"><span
+                                                                                class="text-[10px] text-muted-foreground">0.0h</span><span
+                                                                                class="text-xs font-semibold min-w-[40px] text-right text-chart-4">0.0%</span>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="rounded-xl border bg-card text-card-foreground shadow p-4 h-full flex flex-col">
+                                                            <div class="flex items-start gap-3 mb-4">
+                                                                <div class="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
+                                                                     style="background-color: rgb(132, 204, 22);">
+                                                                    <svg xmlns="http://www.w3.org/2000/svg" width="24"
+                                                                         height="24" viewBox="0 0 24 24" fill="none"
+                                                                         stroke="currentColor" stroke-width="2"
+                                                                         stroke-linecap="round" stroke-linejoin="round"
+                                                                         class="lucide lucide-folder-kanban h-5 w-5 text-white"
+                                                                         aria-hidden="true">
+                                                                        <path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"></path>
+                                                                        <path d="M8 10v4"></path>
+                                                                        <path d="M12 10v2"></path>
+                                                                        <path d="M16 10v6"></path>
+                                                                    </svg>
+                                                                </div>
+                                                                <div class="flex-1 min-w-0"><h3
+                                                                        class="font-semibold text-sm truncate">쿠팡 CIC
+                                                                    웹사이트 구축</h3>
+                                                                    <p class="text-xs text-muted-foreground">
+                                                                        BB-CIC-WEB</p></div>
+                                                                <div class="inline-flex items-center rounded-md border px-2.5 py-0.5 font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 text-[10px] flex-shrink-0 border-chart-4 text-chart-4">
+                                                                    0.0%
+                                                                </div>
+                                                            </div>
+                                                            <div class="flex items-center gap-2 text-xs text-muted-foreground mb-3">
+                                                                <svg xmlns="http://www.w3.org/2000/svg" width="24"
+                                                                     height="24" viewBox="0 0 24 24" fill="none"
+                                                                     stroke="currentColor" stroke-width="2"
+                                                                     stroke-linecap="round" stroke-linejoin="round"
+                                                                     class="lucide lucide-calendar h-3 w-3"
+                                                                     aria-hidden="true">
+                                                                    <path d="M8 2v4"></path>
+                                                                    <path d="M16 2v4"></path>
+                                                                    <rect width="18" height="18" x="3" y="4"
+                                                                          rx="2"></rect>
+                                                                    <path d="M3 10h18"></path>
+                                                                </svg>
+                                                                <span>2026-06-01 ~ 미정</span><span class="text-[10px]">(2개월)</span>
+                                                            </div>
+                                                            <div class="grid grid-cols-2 gap-2 mb-4">
+                                                                <div class="bg-muted/50 rounded-lg p-2"><p
+                                                                        class="text-[10px] text-muted-foreground">예상
+                                                                    투입</p>
+                                                                    <p class="text-sm font-semibold">-</p></div>
+                                                                <div class="bg-muted/50 rounded-lg p-2"><p
+                                                                        class="text-[10px] text-muted-foreground">실제
+                                                                    투입</p>
+                                                                    <p class="text-sm font-semibold">0h</p></div>
+                                                            </div>
+                                                            <div class="mb-4">
+                                                                <div class="flex items-center justify-between text-xs mb-1">
+                                                                    <span class="text-muted-foreground">투입율</span><span
+                                                                        class="font-medium text-chart-4">0.0%</span>
+                                                                </div>
+                                                                <div aria-valuemax="100" aria-valuemin="0"
+                                                                     role="progressbar" data-state="indeterminate"
+                                                                     data-max="100"
+                                                                     class="relative w-full overflow-hidden rounded-full bg-primary/20 h-2 [&amp;&gt;div]:bg-chart-4">
+                                                                    <div data-state="indeterminate" data-max="100"
+                                                                         class="h-full w-full flex-1 bg-primary transition-all"
+                                                                         style="transform: translateX(-100%);"></div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="flex-1 min-h-0">
+                                                                <div class="flex items-center justify-between mb-2">
+                                                                    <span class="text-xs font-medium text-muted-foreground">투입 인력 (7명)</span><span
+                                                                        class="text-xs text-muted-foreground">합계: 0.0h</span>
+                                                                </div>
+                                                                <div class="space-y-1.5 max-h-[150px] overflow-y-auto">
+                                                                    <div class="flex items-center justify-between py-1.5 px-2 bg-muted/30 rounded">
+                                                                        <div class="flex items-center gap-2">
+                                                                            <div class="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center">
+                                                                                <span class="text-[9px] font-medium text-primary">정</span>
+                                                                            </div>
+                                                                            <span class="text-xs font-medium truncate max-w-[60px]">정민희</span>
+                                                                        </div>
+                                                                        <div class="flex items-center gap-2"><span
+                                                                                class="text-[10px] text-muted-foreground">0.0h</span><span
+                                                                                class="text-xs font-semibold min-w-[40px] text-right text-chart-4">0.0%</span>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="flex items-center justify-between py-1.5 px-2 bg-muted/30 rounded">
+                                                                        <div class="flex items-center gap-2">
+                                                                            <div class="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center">
+                                                                                <span class="text-[9px] font-medium text-primary">김</span>
+                                                                            </div>
+                                                                            <span class="text-xs font-medium truncate max-w-[60px]">김동현</span>
+                                                                        </div>
+                                                                        <div class="flex items-center gap-2"><span
+                                                                                class="text-[10px] text-muted-foreground">0.0h</span><span
+                                                                                class="text-xs font-semibold min-w-[40px] text-right text-chart-4">0.0%</span>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="flex items-center justify-between py-1.5 px-2 bg-muted/30 rounded">
+                                                                        <div class="flex items-center gap-2">
+                                                                            <div class="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center">
+                                                                                <span class="text-[9px] font-medium text-primary">이</span>
+                                                                            </div>
+                                                                            <span class="text-xs font-medium truncate max-w-[60px]">이범수</span>
+                                                                        </div>
+                                                                        <div class="flex items-center gap-2"><span
+                                                                                class="text-[10px] text-muted-foreground">0.0h</span><span
+                                                                                class="text-xs font-semibold min-w-[40px] text-right text-chart-4">0.0%</span>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="flex items-center justify-between py-1.5 px-2 bg-muted/30 rounded">
+                                                                        <div class="flex items-center gap-2">
+                                                                            <div class="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center">
+                                                                                <span class="text-[9px] font-medium text-primary">고</span>
+                                                                            </div>
+                                                                            <span class="text-xs font-medium truncate max-w-[60px]">고성욱</span>
+                                                                        </div>
+                                                                        <div class="flex items-center gap-2"><span
+                                                                                class="text-[10px] text-muted-foreground">0.0h</span><span
+                                                                                class="text-xs font-semibold min-w-[40px] text-right text-chart-4">0.0%</span>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="flex items-center justify-between py-1.5 px-2 bg-muted/30 rounded">
+                                                                        <div class="flex items-center gap-2">
+                                                                            <div class="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center">
+                                                                                <span class="text-[9px] font-medium text-primary">김</span>
+                                                                            </div>
+                                                                            <span class="text-xs font-medium truncate max-w-[60px]">김일유</span>
+                                                                        </div>
+                                                                        <div class="flex items-center gap-2"><span
+                                                                                class="text-[10px] text-muted-foreground">0.0h</span><span
+                                                                                class="text-xs font-semibold min-w-[40px] text-right text-chart-4">0.0%</span>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="flex items-center justify-between py-1.5 px-2 bg-muted/30 rounded">
+                                                                        <div class="flex items-center gap-2">
+                                                                            <div class="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center">
+                                                                                <span class="text-[9px] font-medium text-primary">전</span>
+                                                                            </div>
+                                                                            <span class="text-xs font-medium truncate max-w-[60px]">전수민</span>
+                                                                        </div>
+                                                                        <div class="flex items-center gap-2"><span
+                                                                                class="text-[10px] text-muted-foreground">0.0h</span><span
+                                                                                class="text-xs font-semibold min-w-[40px] text-right text-chart-4">0.0%</span>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="flex items-center justify-between py-1.5 px-2 bg-muted/30 rounded">
+                                                                        <div class="flex items-center gap-2">
+                                                                            <div class="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center">
+                                                                                <span class="text-[9px] font-medium text-primary">이</span>
+                                                                            </div>
+                                                                            <span class="text-xs font-medium truncate max-w-[60px]">이태유</span>
+                                                                        </div>
+                                                                        <div class="flex items-center gap-2"><span
+                                                                                class="text-[10px] text-muted-foreground">0.0h</span><span
+                                                                                class="text-xs font-semibold min-w-[40px] text-right text-chart-4">0.0%</span>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+</body>
+</html>

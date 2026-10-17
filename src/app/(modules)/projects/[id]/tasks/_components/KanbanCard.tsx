@@ -9,7 +9,6 @@ import {
   Trash2,
   UserRound,
 } from 'lucide-react'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -38,24 +37,27 @@ const priorityConfig: Record<
 > = {
   HIGH: {
     label: '높음',
-    className: 'border-red-200 bg-red-50 text-red-700',
+    className: 'border-red-200 bg-red-50 text-red-600',
   },
   MEDIUM: {
     label: '보통',
-    className: 'border-amber-200 bg-amber-50 text-amber-700',
+    className: 'border-orange-200 bg-orange-50 text-orange-600',
   },
   LOW: {
     label: '낮음',
-    className: 'border-emerald-200 bg-emerald-50 text-emerald-700',
+    className: 'border-border bg-muted text-muted-foreground',
   },
 }
 
 const dueClassName = {
-  overdue: 'border-red-200 bg-red-50 text-red-700',
-  dueSoon: 'border-orange-200 bg-orange-50 text-orange-700',
-  later: 'border-border bg-background text-muted-foreground',
-  none: 'border-border bg-background text-muted-foreground',
+  overdue: 'border-red-200 bg-red-50 text-red-600',
+  dueSoon: 'border-orange-200 bg-orange-50 text-orange-600',
+  later: 'border-border bg-card text-muted-foreground',
+  none: 'border-border bg-card text-muted-foreground',
 }
+
+const chipClassName =
+  'inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5 text-xs font-semibold'
 
 type Props = {
   task: KanbanTaskModel<TaskWithAssignee>
@@ -88,11 +90,10 @@ export function KanbanCard({
         onDragStart(task.id)
       }}
       className={cn(
-        'group rounded-lg border bg-card p-3 shadow-sm transition-all select-none',
-        canDrag &&
-          'cursor-grab hover:-translate-y-0.5 hover:shadow-md active:cursor-grabbing active:opacity-70',
+        'group rounded-xl border bg-card p-3 shadow-sm transition-shadow select-none hover:shadow-md',
+        canDrag && 'cursor-grab active:cursor-grabbing active:opacity-70',
         !canDrag && 'cursor-default',
-        task.status === 'DONE' && 'bg-card/70',
+        task.status === 'DONE' && 'opacity-70',
       )}
     >
       <div className="mb-2 flex items-start gap-2">
@@ -104,15 +105,13 @@ export function KanbanCard({
             {task.title}
           </h3>
           <div className="mt-2 flex flex-wrap items-center gap-1.5">
-            <Badge className={cn('border text-xs', priority.className)}>
+            <span className={cn(chipClassName, priority.className)}>
               {priority.label}
-            </Badge>
-            <Badge
-              className={cn('border text-xs', dueClassName[task.dueState.bucket])}
-            >
+            </span>
+            <span className={cn(chipClassName, dueClassName[task.dueState.bucket])}>
               <CalendarClock className="size-3" />
               {task.dueState.label}
-            </Badge>
+            </span>
           </div>
         </div>
         {canManageTasks && (
@@ -124,6 +123,7 @@ export function KanbanCard({
                     variant="ghost"
                     size="icon-xs"
                     aria-label="태스크 수정"
+                    title="태스크 수정"
                     onClick={(e) => e.stopPropagation()}
                   >
                     <Pencil />
@@ -146,6 +146,7 @@ export function KanbanCard({
               variant="ghost"
               size="icon-xs"
               aria-label="태스크 삭제"
+              title="태스크 삭제"
               className="hover:text-destructive"
               onClick={() => startTransition(() => deleteTask(task.id, projectId))}
               disabled={isPending}
@@ -164,22 +165,22 @@ export function KanbanCard({
       )}
 
       <div className="flex items-center justify-between gap-2 border-t pt-2">
-        <div className="min-w-0 text-xs text-muted-foreground">
-          {task.assignee ? (
-            <span className="truncate">{task.assignee.name}</span>
-          ) : (
-            <span className="inline-flex items-center gap-1">
-              <UserRound className="size-3.5" />
-              미배정
-            </span>
-          )}
-        </div>
-        {task.assignee && (
+        <span className="min-w-0 truncate text-xs text-muted-foreground">
+          {task.assignee ? task.assignee.name : '미배정'}
+        </span>
+        {task.assignee ? (
           <Avatar size="sm" title={task.assignee.name}>
             <AvatarFallback className="bg-primary/10 text-[10px] text-primary">
               {assigneeInitial}
             </AvatarFallback>
           </Avatar>
+        ) : (
+          <span
+            title="미배정"
+            className="flex size-6 shrink-0 items-center justify-center rounded-full border-2 border-dashed border-muted-foreground/30"
+          >
+            <UserRound className="size-3 text-muted-foreground/60" />
+          </span>
         )}
       </div>
     </article>
