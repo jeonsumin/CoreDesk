@@ -20,10 +20,13 @@ test('내 항목 + WRITE → true', () => assert.equal(canModifyItem({ ...mod, a
 test('루트 소유자 → true', () => assert.equal(canModifyItem({ ...mod, rootOwnerId: 'u', access: 'WRITE', creatorId: 'x' }), true))
 test('ADMIN → true', () => assert.equal(canModifyItem({ ...mod, role: 'ADMIN', access: 'WRITE', creatorId: 'x' }), true))
 test('READ → false', () => assert.equal(canModifyItem({ ...mod, access: 'READ', creatorId: 'u' }), false))
+test('canModifyItem ADMIN + READ → false', () => assert.equal(canModifyItem({ ...mod, role: 'ADMIN', access: 'READ', creatorId: 'x' }), false))
+test('canModifyItem 루트 소유자 + READ → false', () => assert.equal(canModifyItem({ ...mod, rootOwnerId: 'u', access: 'READ', creatorId: 'x' }), false))
 
 test('포트폴리오 → false', () => assert.equal(canManageRoot({ userId: 'u', role: 'ADMIN', rootOwnerId: 'u', isPortfolio: true }), false))
 test('canManageRoot ADMIN → true', () => assert.equal(canManageRoot({ userId: 'u', role: 'ADMIN', rootOwnerId: 'o', isPortfolio: false }), true))
 test('비소유자 → false', () => assert.equal(canManageRoot({ userId: 'u', role: 'MANAGER', rootOwnerId: 'o', isPortfolio: false }), false))
+test('canManageRoot MANAGER 소유자 → true', () => assert.equal(canManageRoot({ userId: 'u', role: 'MANAGER', rootOwnerId: 'u', isPortfolio: false }), true))
 
 test('READ는 쓰기 불가', () => assert.equal(canWriteInto('READ'), false))
 
