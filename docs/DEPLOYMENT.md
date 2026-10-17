@@ -92,9 +92,9 @@ DATABASE_URL="<대상 DB URL>" npm run menus:seed      # 기본 메뉴와 권한
 # 개발 체크아웃 또는 CI 머신에서, DATABASE_URL을 대상 DB로 지정해 실행한다.
 # 운영 이미지는 `npm ci --omit=dev`라 ts-node(devDependency)가 없어 drive:backfill-root를 실행할 수 없다.
 DATABASE_URL="<대상 DB URL>" npx prisma db push              # DriveFolderPermission 테이블, DriveFolder.rootId 컬럼 반영 (이미지 롤아웃 전)
-DATABASE_URL="<대상 DB URL>" npm run drive:backfill-root     # 기존 폴더의 rootId 역참조 설정
+DATABASE_URL="<대상 DB URL>" npm run drive:backfill-root     # 기존 폴더의 rootId 채우기
 ```
 
-- `drive:backfill-root`는 멱등이며 데모 데이터를 생성하지 않는다. 기존 폴더들의 계층 구조를 바탕으로 루트 폴더 참조만 역참조한다.
-- `db push` 후 backfill 전에 배포하면 `rootId` 미설정 하위 폴더는 자신을 루트로 판정되어 비공개로 동작하지만, 데이터 손실이나 노출은 없다. 시드를 실행하면 바로 복구된다.
-- `db push` 없이 배포하면 모든 인증 페이지가 500이 된다.
+- `drive:backfill-root`는 멱등이며 데모 데이터를 생성하지 않는다. 기존 폴더들의 계층 구조를 바탕으로 각 하위 폴더의 `rootId`를 최상위 루트 폴더 id로 채운다.
+- `db push` 후 backfill 전에 배포하면 `rootId` 미설정 하위 폴더는 자기 자신을 루트로 취급해 비공개(소유자만 접근)로 동작하지만, 데이터 손실이나 노출은 없다. `npm run drive:backfill-root`를 실행하면 바로 복구된다.
+- `db push` 없이 배포하면 드라이브 페이지 및 드라이브 액션·파일 API가 500 에러를 낸다. (`DriveFolder.rootId`/`DriveFolderPermission` 컬럼이 없기 때문) 다른 인증 페이지는 영향 없다.
