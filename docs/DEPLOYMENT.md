@@ -97,4 +97,4 @@ DATABASE_URL="<대상 DB URL>" npm run drive:backfill-root     # 기존 폴더�
 
 - `drive:backfill-root`는 멱등이며 데모 데이터를 생성하지 않는다. 기존 폴더들의 계층 구조를 바탕으로 각 하위 폴더의 `rootId`를 최상위 루트 폴더 id로 채운다.
 - `db push` 후 backfill 전에 배포하면 `rootId` 미설정 하위 폴더는 자기 자신을 루트로 취급해 비공개(소유자만 접근)로 동작하지만, 데이터 손실이나 노출은 없다. `npm run drive:backfill-root`를 실행하면 바로 복구된다.
-- `db push` 없이 배포하면 드라이브 페이지 및 드라이브 액션·파일 API가 500 에러를 낸다. (`DriveFolder.rootId`/`DriveFolderPermission` 컬럼이 없기 때문) 다른 인증 페이지는 영향 없다.
+- `db push` 없이 배포하면 `DriveFolder`를 조회하는 드라이브·포트폴리오 화면과 액션, 파일 API가 500 에러를 낸다(`DriveFolder.rootId` 컬럼과 `DriveFolderPermission` 테이블이 없기 때문).
