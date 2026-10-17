@@ -42,11 +42,11 @@ export function ProjectMemoList({ projectId, memos }: Props) {
       {/* 툴바: 개수 + 작성 (패널 안이므로 테두리 없음) */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h3 className="flex items-center gap-2 text-sm font-semibold">
-          연동된 메모
+          프로젝트 메모
           <CountBadge>{memos.length}</CountBadge>
         </h3>
         <Link
-          href={`/memos/new?projectId=${projectId}`}
+          href={`/projects/${projectId}/memos/new`}
           className={buttonVariants({ size: 'sm' })}
         >
           <Plus data-icon="inline-start" />
@@ -61,7 +61,7 @@ export function ProjectMemoList({ projectId, memos }: Props) {
           description="회의록, 결정 사항 등을 메모로 남겨 팀과 공유하세요."
           action={
             <Link
-              href={`/memos/new?projectId=${projectId}`}
+              href={`/projects/${projectId}/memos/new`}
               className={buttonVariants()}
             >
               <Plus data-icon="inline-start" />첫 메모 작성하기
@@ -79,7 +79,7 @@ export function ProjectMemoList({ projectId, memos }: Props) {
               <CardHeader>
                 <div className="min-w-0 space-y-1">
                   <CardTitle className="truncate">
-                    <Link href={`/memos/${memo.id}`} className="hover:text-primary">
+                    <Link href={`/projects/${projectId}/memos/${memo.id}`} className="hover:text-primary">
                       {memo.title}
                     </Link>
                   </CardTitle>

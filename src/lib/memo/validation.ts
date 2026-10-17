@@ -3,7 +3,6 @@ import { z } from 'zod'
 export type MemoInput = {
   title: string
   content: string
-  projectId?: string
 }
 
 export type MemoSearchParams = {
@@ -20,12 +19,6 @@ const MAX_SEARCH_LENGTH = 80
 
 function stringValue(raw: FormDataEntryValue | null): string {
   return typeof raw === 'string' ? raw : ''
-}
-
-function optionalStringValue(raw: FormDataEntryValue | null): string | undefined {
-  if (typeof raw !== 'string') return undefined
-  const trimmed = raw.trim()
-  return trimmed.length > 0 ? trimmed : undefined
 }
 
 function normalizeLineEndings(value: string): string {
@@ -45,18 +38,12 @@ const memoSchema = z.object({
       `내용은 ${MAX_CONTENT_LENGTH.toLocaleString()}자 이하로 입력해주세요`,
     )
     .transform(normalizeLineEndings),
-  projectId: z
-    .string()
-    .trim()
-    .optional()
-    .transform((value) => (value ? value : undefined)),
 })
 
 export function parseMemoFormData(formData: FormData): ParseResult {
   const parsed = memoSchema.safeParse({
     title: stringValue(formData.get('title')),
     content: stringValue(formData.get('content')),
-    projectId: optionalStringValue(formData.get('projectId')),
   })
 
   if (!parsed.success) {

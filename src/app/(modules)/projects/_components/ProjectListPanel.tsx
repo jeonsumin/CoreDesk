@@ -143,7 +143,11 @@ function ProjectSubNav({
 }) {
   const base = `/projects/${projectId}`
   const onDetail = pathname === base
-  const activeTab = onDetail ? tab ?? 'tasks' : null
+  const activeTab = onDetail
+    ? tab ?? 'tasks'
+    : pathname.startsWith(`${base}/memos/`)
+      ? 'memos'
+      : null
 
   const items = [
     { key: 'tasks', label: '태스크 관리', icon: KanbanSquare, href: `${base}?tab=tasks` },

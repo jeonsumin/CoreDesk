@@ -23,12 +23,11 @@ export default async function MemosLayout({
   if (!session?.user?.id) redirect('/login')
 
   const memos = await prisma.memo.findMany({
-    where: { ownerId: session.user.id },
+    where: { ownerId: session.user.id, projectId: null },
     select: {
       id: true,
       title: true,
       updatedAt: true,
-      project: { select: { id: true, name: true } },
     },
     orderBy: { updatedAt: 'desc' },
   })
@@ -38,7 +37,6 @@ export default async function MemosLayout({
     id: memo.id,
     title: memo.title,
     updatedAt: formatDate(memo.updatedAt),
-    projectName: memo.project?.name ?? null,
   }))
 
   return (

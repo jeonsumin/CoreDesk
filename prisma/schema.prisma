@@ -223,7 +223,7 @@ model Memo {
   updatedAt DateTime @updatedAt
 
   owner   User     @relation("MemoOwner", fields: [ownerId], references: [id])
-  project Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  project Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
   @@index([ownerId])
   @@index([projectId])

@@ -73,7 +73,3 @@ export type PortfolioWithAssets = Portfolio & {
   links: PortfolioLink[]
   images: (PortfolioImage & { file: DriveFile })[]
 }
-
-export type MemoWithProject = Memo & {
-  project: Pick<Project, 'id' | 'name'> | null
-}
