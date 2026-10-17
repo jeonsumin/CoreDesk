@@ -83,3 +83,18 @@ DATABASE_URL="<대상 DB URL>" npm run menus:seed      # 기본 메뉴와 권한
 - `menus:seed`를 다시 실행하면 관리자가 삭제한 시드 메뉴가 다시 생성된다.
 - `db push` 후 시드 전에 배포하면 사이드바가 비어 보일 뿐 페이지는 열리며, 시드를 실행하면 바로 복구된다. `db push` 없이 배포하면 모든 인증 페이지가 500이 된다.
 - `src/middleware.ts`는 `src/proxy.ts`로 대체되었다(Next 16, Node 런타임). 요청마다 비활성 사용자와 숨김 처리된 메뉴 경로를 차단한다.
+
+## 7. 시스템관리 3단계 (드라이브 폴더 공유) 배포
+
+루트 폴더를 역할별로 공유할 수 있도록 변경되었으므로 배포 시 대상 DB에 대해 아래 순서로 실행한다.
+
+```bash
+# 개발 체크아웃 또는 CI 머신에서, DATABASE_URL을 대상 DB로 지정해 실행한다.
+# 운영 이미지는 `npm ci --omit=dev`라 ts-node(devDependency)가 없어 drive:backfill-root를 실행할 수 없다.
+DATABASE_URL="<대상 DB URL>" npx prisma db push              # DriveFolderPermission 테이블, DriveFolder.rootId 컬럼 반영 (이미지 롤아웃 전)
+DATABASE_URL="<대상 DB URL>" npm run drive:backfill-root     # 기존 폴더의 rootId 역참조 설정
+```
+
+- `drive:backfill-root`는 멱등이며 데모 데이터를 생성하지 않는다. 기존 폴더들의 계층 구조를 바탕으로 루트 폴더 참조만 역참조한다.
+- `db push` 후 backfill 전에 배포하면 `rootId` 미설정 하위 폴더는 자신을 루트로 판정되어 비공개로 동작하지만, 데이터 손실이나 노출은 없다. 시드를 실행하면 바로 복구된다.
+- `db push` 없이 배포하면 모든 인증 페이지가 500이 된다.
