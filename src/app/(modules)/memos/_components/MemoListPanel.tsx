@@ -16,7 +16,13 @@ type MemoItem = {
 }
 
 // 좌측 메모 목록. 검색은 기존과 같이 GET /memos?q= 로 보내 서버에서 거르고, 목록도 같은 q로 맞춘다
-export function MemoListPanel({ memos }: { memos: MemoItem[] }) {
+export function MemoListPanel({
+  memos,
+  canWrite,
+}: {
+  memos: MemoItem[]
+  canWrite: boolean
+}) {
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const { q } = parseMemoSearchParams({ q: searchParams.get('q') ?? undefined })
@@ -60,13 +66,19 @@ export function MemoListPanel({ memos }: { memos: MemoItem[] }) {
       <div className="flex-1 space-y-1 overflow-y-auto p-2">
         {visible.length === 0 ? (
           <div className="px-3 py-10 text-center text-sm text-muted-foreground">
-            {q ? '검색된 메모가 없습니다.' : '아직 작성한 메모가 없습니다.'}
-            <Link
-              href="/memos/new"
-              className="mt-3 block font-medium text-primary hover:underline"
-            >
-              새 메모 작성하기
-            </Link>
+            {q
+              ? '검색된 메모가 없습니다.'
+              : canWrite
+                ? '아직 작성한 메모가 없습니다.'
+                : '등록된 메모가 없습니다'}
+            {canWrite && (
+              <Link
+                href="/memos/new"
+                className="mt-3 block font-medium text-primary hover:underline"
+              >
+                새 메모 작성하기
+              </Link>
+            )}
           </div>
         ) : (
           visible.map((memo) => {

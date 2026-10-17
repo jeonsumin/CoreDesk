@@ -7,6 +7,7 @@ import { EmptyState, Panel, PanelHeader, PanelToolbar } from '@/components/layou
 import { auth } from '@/lib/auth'
 import { parseMemoSearchParams } from '@/lib/memo/validation'
 import { prisma } from '@/lib/prisma'
+import { getMenuAccess } from '@/lib/menu/access'
 import { MemoCard } from './_components/MemoCard'
 import type { Prisma } from '@prisma/client'
 
@@ -20,6 +21,7 @@ export default async function MemosPage({ searchParams }: Props) {
   const session = await auth()
   if (!session?.user?.id) redirect('/login')
 
+  const canWrite = (await getMenuAccess('/memos')) === 'WRITE'
   const params = await searchParams
   const { q } = parseMemoSearchParams(params)
 
@@ -77,16 +79,28 @@ export default async function MemosPage({ searchParams }: Props) {
         {memos.length === 0 ? (
           <EmptyState
             icon={<NotepadText />}
-            title={q ? '검색된 메모가 없습니다.' : '아직 작성한 메모가 없습니다.'}
+            title={
+              q
+                ? '검색된 메모가 없습니다.'
+                : canWrite
+                  ? '아직 작성한 메모가 없습니다.'
+                  : '등록된 메모가 없습니다'
+            }
             description={
               q
-                ? '다른 검색어로 찾아보거나 새 메모를 작성하세요.'
-                : '회의록, 아이디어, 할 일을 블록 에디터로 정리해 보세요.'
+                ? canWrite
+                  ? '다른 검색어로 찾아보거나 새 메모를 작성하세요.'
+                  : '다른 검색어로 찾아보세요.'
+                : canWrite
+                  ? '회의록, 아이디어, 할 일을 블록 에디터로 정리해 보세요.'
+                  : undefined
             }
             action={
-              <Link href="/memos/new" className={buttonVariants()}>
-                첫 메모 작성하기
-              </Link>
+              canWrite ? (
+                <Link href="/memos/new" className={buttonVariants()}>
+                  첫 메모 작성하기
+                </Link>
+              ) : undefined
             }
           />
         ) : (

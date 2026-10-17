@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import { FilePlus } from 'lucide-react'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { getMenuAccess } from '@/lib/menu/access'
 import { buttonVariants } from '@/components/ui/button'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { MemoListPanel } from './_components/MemoListPanel'
@@ -21,6 +22,8 @@ export default async function MemosLayout({
 }) {
   const session = await auth()
   if (!session?.user?.id) redirect('/login')
+
+  const canWrite = (await getMenuAccess('/memos')) === 'WRITE'
 
   const memos = await prisma.memo.findMany({
     where: { ownerId: session.user.id },
@@ -46,6 +49,7 @@ export default async function MemosLayout({
       <PageHeader
         title="메모"
         actions={
+          canWrite && (
           <Link
             href="/memos/new"
             aria-label="새 메모"
@@ -54,10 +58,11 @@ export default async function MemosLayout({
           >
             <FilePlus />
           </Link>
+          )
         }
       />
       <div className="flex min-h-0 flex-1 gap-4">
-        <MemoListPanel memos={items} />
+        <MemoListPanel memos={items} canWrite={canWrite} />
         <div className="flex min-h-0 min-w-0 flex-1 flex-col">{children}</div>
       </div>
     </div>

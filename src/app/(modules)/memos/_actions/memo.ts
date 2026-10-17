@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation'
 import { auth } from '@/lib/auth'
 import { parseMemoFormData } from '@/lib/memo/validation'
 import { prisma } from '@/lib/prisma'
+import { requireMenuWrite } from '@/lib/menu/access'
 
 type ActionResult = { error?: string }
 
@@ -36,6 +37,7 @@ async function validateProjectLink(
 }
 
 export async function createMemo(formData: FormData): Promise<ActionResult> {
+  await requireMenuWrite('/memos')
   const ownerId = await ensureAuthenticated()
   const parsed = parseMemoFormData(formData)
   if (!parsed.success) return { error: parsed.error }
@@ -64,6 +66,7 @@ export async function updateMemo(
   id: string,
   formData: FormData,
 ): Promise<ActionResult> {
+  await requireMenuWrite('/memos')
   const ownerId = await ensureAuthenticated()
   const memo = await prisma.memo.findUnique({
     where: { id },
@@ -99,6 +102,7 @@ export async function updateMemo(
 }
 
 export async function deleteMemo(id: string): Promise<ActionResult> {
+  await requireMenuWrite('/memos')
   const ownerId = await ensureAuthenticated()
   const memo = await prisma.memo.findUnique({
     where: { id },
@@ -116,6 +120,7 @@ export async function deleteMemo(id: string): Promise<ActionResult> {
 }
 
 export async function deleteMemoFormAction(id: string): Promise<void> {
+  await requireMenuWrite('/memos')
   const result = await deleteMemo(id)
   if (result.error) throw new Error(result.error)
 }

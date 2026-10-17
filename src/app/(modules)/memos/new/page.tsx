@@ -1,7 +1,8 @@
-import { redirect } from 'next/navigation'
+import { notFound, redirect } from 'next/navigation'
 import { FilePlus } from 'lucide-react'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { getMenuAccess } from '@/lib/menu/access'
 import { MemoForm } from '../_components/MemoForm'
 import { FormPanel } from '@/components/layout/FormPanel'
 
@@ -14,6 +15,7 @@ export const dynamic = 'force-dynamic'
 export default async function NewMemoPage({ searchParams }: Props) {
   const session = await auth()
   if (!session?.user?.id) redirect('/login')
+  if ((await getMenuAccess('/memos')) !== 'WRITE') notFound()
 
   const params = await searchParams
   const projects = await prisma.project.findMany({
