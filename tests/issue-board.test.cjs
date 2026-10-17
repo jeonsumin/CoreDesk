@@ -51,16 +51,15 @@ test('보드: 에픽 필터 (특정 에픽 / 미할당) 와 다중 담당자 필
   assert.deepEqual(ids(buildKanbanBoardModel(sample, { filters: { assigneeId: 'unassigned' } })), ['a', 'c'])
 })
 
-test('타임라인: 에픽 아래 하위 이슈, 미할당 이슈는 마지막 그룹, 에픽 기간은 비어있으면 하위 이슈로 계산', () => {
+test('타임라인: 에픽 아래 하위 이슈, 미할당 이슈는 마지막 그룹, 에픽 행은 날짜 없음(막대 없음)', () => {
   const rows = buildTimelineRows([
-    issue({ id: 'e1', type: 'EPIC', number: 1 }),
+    issue({ id: 'e1', type: 'EPIC', number: 1, startDate: '2026-07-01', dueDate: '2026-07-31' }),
     issue({ id: 'x', epicId: 'e1', number: 3, startDate: '2026-07-05', dueDate: '2026-07-10' }),
     issue({ id: 'y', epicId: 'e1', number: 2, startDate: '2026-07-01', dueDate: '2026-07-03', status: 'DONE' }),
     issue({ id: 'z', number: 4 }),
   ])
   assert.deepEqual(rows.map((r) => `${r.kind}:${r.id}`), ['epic:e1', 'issue:y', 'issue:x', 'group:none', 'issue:z'])
-  const epic = rows[0]
-  assert.equal(epic.startDate, '2026-07-01')
-  assert.equal(epic.dueDate, '2026-07-10')
-  assert.equal(epic.progress, 50)
+  assert.equal(rows[0].startDate, null)
+  assert.equal(rows[0].dueDate, null)
+  assert.equal(rows[2].startDate, '2026-07-05')
 })

@@ -36,7 +36,6 @@ const SCALE_LABELS: { key: Zoom; label: string }[] = [
 ]
 
 const barStyle = {
-  epic: 'bg-purple-200 text-purple-800 dark:bg-purple-900/60 dark:text-purple-100',
   TODO: 'bg-sky-200 text-sky-900 dark:bg-sky-900/60 dark:text-sky-100',
   IN_PROGRESS: 'bg-blue-500 text-white',
   DONE: 'bg-green-500 text-white',
@@ -215,11 +214,11 @@ export function IssueTimeline({ issues, projectId, projectKey, assignableMembers
                 />
                 <div className="relative" style={{ width: timelineWidth }}>
                   <TimelineGrid model={model} dayWidth={dayWidth} zoom={zoom} />
-                  {row.kind !== 'group' && model.rows[index].hasBar && (
+                  {row.kind === 'issue' && model.rows[index].hasBar && (
                     <GanttBar
                       row={model.rows[index]}
                       dayWidth={dayWidth}
-                      className={row.kind === 'epic' ? barStyle.epic : barStyle[row.status]}
+                      className={barStyle[row.status]}
                       onClick={() => setSelectedId(row.id)}
                     />
                   )}
