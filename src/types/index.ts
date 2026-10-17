@@ -13,6 +13,8 @@ import type {
   PortfolioLink,
   PortfolioImage,
   Memo,
+  Menu,
+  MenuPermission,
 } from '@prisma/client'
 
 export type {
@@ -30,6 +32,8 @@ export type {
   PortfolioLink,
   PortfolioImage,
   Memo,
+  Menu,
+  MenuPermission,
 }
 
 export type {
@@ -39,6 +43,9 @@ export type {
   TaskStatus,
   Priority,
   PortfolioUriType,
+  MenuType,
+  MenuStatus,
+  MenuAccess,
 } from '@prisma/client'
 
 export type ProjectWithDetails = Project & {

@@ -268,3 +268,48 @@ enum PortfolioUriType {
   PRODUCTION
   OTHER
 }
+
+enum MenuType {
+  GROUP
+  PAGE
+  LINK
+}
+
+enum MenuStatus {
+  ACTIVE
+  PREPARING
+}
+
+enum MenuAccess {
+  NONE
+  READ
+  WRITE
+}
+
+model Menu {
+  id        String     @id @default(cuid())
+  title     String
+  type      MenuType
+  path      String?    @unique
+  icon      String
+  section   String?
+  parentId  String?
+  sortOrder Int
+  status    MenuStatus @default(ACTIVE)
+  isSystem  Boolean    @default(false)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  parent      Menu?            @relation("MenuTree", fields: [parentId], references: [id])
+  children    Menu[]           @relation("MenuTree")
+  permissions MenuPermission[]
+}
+
+model MenuPermission {
+  menuId String
+  role   Role
+  access MenuAccess
+  menu   Menu       @relation(fields: [menuId], references: [id], onDelete: Cascade)
+
+  @@id([menuId, role])
+}

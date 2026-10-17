@@ -1,0 +1,37 @@
+import {
+  LayoutDashboard,
+  FolderKanban,
+  BriefcaseBusiness,
+  NotepadText,
+  HardDrive,
+  Settings,
+  Users,
+  Menu,
+  ShieldCheck,
+  ListTodo,
+  Link,
+  FileText,
+  Calendar,
+  BarChart3,
+  Folder,
+  type LucideIcon,
+} from 'lucide-react'
+import type { IconName } from './icon-names'
+
+export const MENU_ICONS: Record<IconName, LucideIcon> = {
+  LayoutDashboard,
+  FolderKanban,
+  BriefcaseBusiness,
+  NotepadText,
+  HardDrive,
+  Settings,
+  Users,
+  Menu,
+  ShieldCheck,
+  ListTodo,
+  Link,
+  FileText,
+  Calendar,
+  BarChart3,
+  Folder,
+}
