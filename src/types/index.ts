@@ -16,6 +16,7 @@ import type {
   Menu,
   MenuPermission,
 } from '@prisma/client'
+import type { FolderPerms } from '@/lib/drive/permission-schema'
 
 export type {
   User,
@@ -66,10 +67,20 @@ export type ProjectSummary = Project & {
   completedTaskCount: number
 }
 
-export type DriveFileWithUploader = DriveFile & { uploader: User }
-
 export type DriveFolderWithCount = DriveFolder & {
   _count: { children: number; files: number }
+}
+
+export type DriveFolderItem = DriveFolderWithCount & {
+  canEdit: boolean
+  canManage: boolean
+  badge: string | null
+  perms: FolderPerms | null
+}
+
+export type DriveFileItem = DriveFile & {
+  uploader: Pick<User, 'id' | 'name'>
+  canEdit: boolean
 }
 
 export type BreadcrumbItem = Pick<DriveFolder, 'id' | 'name'>

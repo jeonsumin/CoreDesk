@@ -26,10 +26,10 @@ import {
 import { formatFileSize } from '@/lib/utils'
 import { deleteFile, renameFile } from '../_actions/drive'
 import { FileTypeIcon } from './FileTypeIcon'
-import type { DriveFileWithUploader } from '@/types'
+import type { DriveFileItem } from '@/types'
 
 type Props = {
-  file: DriveFileWithUploader
+  file: DriveFileItem
   onClick: () => void
 }
 
@@ -121,16 +121,18 @@ export function FileCard({ file, onClick }: Props) {
                 }
               />
               <DropdownMenuContent align="end">
-                <DropdownMenuItem
-                  onClick={() => {
-                    setNewName(file.name)
-                    setErrorMsg(null)
-                    setRenameOpen(true)
-                  }}
-                >
-                  <Pencil size={14} />
-                  <span>이름 변경</span>
-                </DropdownMenuItem>
+                {file.canEdit && (
+                  <DropdownMenuItem
+                    onClick={() => {
+                      setNewName(file.name)
+                      setErrorMsg(null)
+                      setRenameOpen(true)
+                    }}
+                  >
+                    <Pencil size={14} />
+                    <span>이름 변경</span>
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuItem
                   render={
                     <a
@@ -142,15 +144,19 @@ export function FileCard({ file, onClick }: Props) {
                   <Download size={14} />
                   <span>다운로드</span>
                 </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  variant="destructive"
-                  onClick={handleDelete}
-                  disabled={isPending}
-                >
-                  <Trash2 size={14} />
-                  <span>삭제</span>
-                </DropdownMenuItem>
+                {file.canEdit && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      variant="destructive"
+                      onClick={handleDelete}
+                      disabled={isPending}
+                    >
+                      <Trash2 size={14} />
+                      <span>삭제</span>
+                    </DropdownMenuItem>
+                  </>
+                )}
               </DropdownMenuContent>
             </DropdownMenu>
           </div>

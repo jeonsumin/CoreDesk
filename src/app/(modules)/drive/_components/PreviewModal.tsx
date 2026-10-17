@@ -12,10 +12,10 @@ import {
 import { formatFileSize } from '@/lib/utils'
 import { deleteFile } from '../_actions/drive'
 import { FileTypeIcon } from './FileTypeIcon'
-import type { DriveFileWithUploader } from '@/types'
+import type { DriveFileItem } from '@/types'
 
 type Props = {
-  file: DriveFileWithUploader | null
+  file: DriveFileItem | null
   open: boolean
   onOpenChange: (open: boolean) => void
 }
@@ -159,17 +159,19 @@ export function PreviewModal({ file, open, onOpenChange }: Props) {
             >
               <Download />
             </Button>
-            <Button
-              variant="ghost"
-              size="icon-lg"
-              aria-label={isPending ? '삭제 중' : '삭제'}
-              title="삭제"
-              className="text-destructive hover:text-destructive"
-              onClick={handleDelete}
-              disabled={isPending}
-            >
-              {isPending ? <Loader2 className="animate-spin" /> : <Trash2 />}
-            </Button>
+            {file.canEdit && (
+              <Button
+                variant="ghost"
+                size="icon-lg"
+                aria-label={isPending ? '삭제 중' : '삭제'}
+                title="삭제"
+                className="text-destructive hover:text-destructive"
+                onClick={handleDelete}
+                disabled={isPending}
+              >
+                {isPending ? <Loader2 className="animate-spin" /> : <Trash2 />}
+              </Button>
+            )}
             <DialogClose
               render={
                 <Button variant="ghost" size="icon-lg" aria-label="닫기" title="닫기" />

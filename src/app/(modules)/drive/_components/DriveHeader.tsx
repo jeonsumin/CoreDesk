@@ -12,16 +12,19 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { PageHeader } from '@/components/layout/PageHeader'
+import type { FolderPerms } from '@/lib/drive/permission-schema'
 import { uploadFile, createFolder } from '../_actions/drive'
+import { FolderPermissionFields } from './FolderPermissionFields'
 
 // 빈 폴더 안내의 업로드 버튼(label)이 이 input을 연다
 export const DRIVE_UPLOAD_INPUT_ID = 'drive-upload-input'
 
 type Props = {
   folderId: string | null
+  canWrite: boolean
 }
 
-export function DriveHeader({ folderId }: Props) {
+export function DriveHeader({ folderId, canWrite }: Props) {
   const inputRef = useRef<HTMLInputElement>(null)
   const [isUploading, startUpload] = useTransition()
   const [isCreating, startCreate] = useTransition()
@@ -30,6 +33,7 @@ export function DriveHeader({ folderId }: Props) {
   const [newFolderOpen, setNewFolderOpen] = useState(false)
   const [folderName, setFolderName] = useState('')
   const [folderError, setFolderError] = useState<string | null>(null)
+  const [folderPerms, setFolderPerms] = useState<FolderPerms>([])
   const dragCounter = useRef(0)
 
   const isPending = isUploading || isCreating
@@ -95,19 +99,28 @@ export function DriveHeader({ folderId }: Props) {
   const openNewFolder = () => {
     setFolderName('')
     setFolderError(null)
+    setFolderPerms([])
     setNewFolderOpen(true)
   }
 
   const handleCreateFolder = () => {
     setFolderError(null)
     startCreate(async () => {
-      const result = await createFolder(folderName, folderId)
+      const result = await createFolder(folderName, folderId, folderId ? undefined : folderPerms)
       if (!result.success) {
         setFolderError(result.error ?? '폴더 생성에 실패했습니다')
         return
       }
       setNewFolderOpen(false)
     })
+  }
+
+  if (!canWrite) {
+    return (
+      <div className="shrink-0">
+        <PageHeader title="드라이브" />
+      </div>
+    )
   }
 
   return (
@@ -189,6 +202,11 @@ export function DriveHeader({ folderId }: Props) {
             />
             {folderError && <p className="text-xs text-destructive">{folderError}</p>}
           </div>
+          {folderId ? (
+            <p className="text-xs text-muted-foreground">상위 폴더 권한을 따릅니다</p>
+          ) : (
+            <FolderPermissionFields value={folderPerms} onChange={setFolderPerms} />
+          )}
           <DialogFooter>
             <Button
               variant="outline"
