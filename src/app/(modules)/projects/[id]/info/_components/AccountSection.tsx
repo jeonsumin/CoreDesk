@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useTransition } from 'react'
-import { Plus, Pencil, Trash2, KeyRound } from 'lucide-react'
+import { Plus, Pencil, Trash2, KeyRound, SquareTerminal, EthernetPort } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -18,6 +18,8 @@ import { toStringArray } from '@/lib/json-array'
 import { TagInput } from './TagInput'
 import { PwCell, TagChips, PasswordInput } from './InfoCommons'
 import { createAccount, updateAccount, deleteAccount } from '../_actions/info'
+import { PortForwardDialog } from './PortForwardDialog'
+import { WebTerminalDialog } from './WebTerminalDialog'
 import type { ProjectAccount } from '@/types'
 
 type Props = {
@@ -29,6 +31,8 @@ type Props = {
 export function AccountSection({ initialItems, projectId, canManage }: Props) {
   const [open, setOpen] = useState(false)
   const [editItem, setEditItem] = useState<ProjectAccount | null>(null)
+  const [forwardItem, setForwardItem] = useState<ProjectAccount | null>(null)
+  const [terminalItem, setTerminalItem] = useState<ProjectAccount | null>(null)
   const [, startTransition] = useTransition()
 
   const openCreate = () => {
@@ -70,6 +74,7 @@ export function AccountSection({ initialItems, projectId, canManage }: Props) {
                 <th className="text-left px-3 py-2 whitespace-nowrap">ID</th>
                 <th className="text-left px-3 py-2 whitespace-nowrap">PW</th>
                 <th className="text-left px-3 py-2 whitespace-nowrap">비고</th>
+                {canManage && <th className="text-left px-3 py-2 whitespace-nowrap">접속</th>}
                 {canManage && <th className="px-3 py-2 w-20" />}
               </tr>
             </thead>
@@ -94,6 +99,28 @@ export function AccountSection({ initialItems, projectId, canManage }: Props) {
                       <span className="text-muted-foreground/50">—</span>
                     )}
                   </td>
+                  {canManage && (
+                    <td className="px-3 py-2 align-top">
+                      <div className="flex gap-1">
+                        <button
+                          onClick={() => setTerminalItem(item)}
+                          className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                          aria-label="웹 SSH 접속"
+                          title="웹 SSH 접속"
+                        >
+                          <SquareTerminal size={13} />
+                        </button>
+                        <button
+                          onClick={() => setForwardItem(item)}
+                          className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                          aria-label="포트 포워딩"
+                          title="포트 포워딩"
+                        >
+                          <EthernetPort size={13} />
+                        </button>
+                      </div>
+                    </td>
+                  )}
                   {canManage && (
                     <td className="px-3 py-2 align-top">
                       <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -135,6 +162,16 @@ export function AccountSection({ initialItems, projectId, canManage }: Props) {
           />
         </DialogContent>
       </Dialog>
+
+      <WebTerminalDialog
+        account={terminalItem}
+        onOpenChange={(open) => !open && setTerminalItem(null)}
+      />
+
+      <PortForwardDialog
+        account={forwardItem}
+        onOpenChange={(open) => !open && setForwardItem(null)}
+      />
     </div>
   )
 }
