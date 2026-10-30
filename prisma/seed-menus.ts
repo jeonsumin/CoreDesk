@@ -1,6 +1,11 @@
-import { PrismaClient, MenuAccess } from '@prisma/client'
+import { PrismaClient } from '@prisma/client'
 
-const ROLES = ['MANAGER', 'MEMBER', 'VIEWER'] as const
+// 기본 권한 그룹: 매니저·멤버는 일반 메뉴 전체, 열람자는 읽기만
+const GROUPS = [
+  { name: '매니저', write: true },
+  { name: '멤버', write: true },
+  { name: '열람자', write: false },
+] as const
 const SYSTEM_GROUP_ID = 'menu-system'
 
 type PageSeed = {
@@ -24,7 +29,17 @@ const PAGES: PageSeed[] = [
   { title: '권한관리', path: '/system/permissions', icon: 'ShieldCheck', sortOrder: 2, section: null, isSystem: true, parentId: SYSTEM_GROUP_ID },
 ]
 
-export async function seedMenus(prisma: PrismaClient): Promise<void> {
+export async function seedMenus(prisma: PrismaClient): Promise<Record<string, string>> {
+  const groupIds: Record<string, string> = {}
+  for (const [sortOrder, g] of GROUPS.entries()) {
+    const group = await prisma.permissionGroup.upsert({
+      where: { name: g.name },
+      update: {},
+      create: { name: g.name, sortOrder },
+    })
+    groupIds[g.name] = group.id
+  }
+
   await prisma.menu.upsert({
     where: { id: SYSTEM_GROUP_ID },
     update: {},
@@ -45,15 +60,17 @@ export async function seedMenus(prisma: PrismaClient): Promise<void> {
       update: {},
       create: { ...rest, path, type: 'PAGE' },
     })
-    const access: MenuAccess = menu.isSystem ? 'NONE' : 'WRITE'
-    for (const role of ROLES) {
+    if (menu.isSystem) continue
+    for (const g of GROUPS) {
+      const groupId = groupIds[g.name]
       await prisma.menuPermission.upsert({
-        where: { menuId_role: { menuId: menu.id, role } },
+        where: { menuId_groupId: { menuId: menu.id, groupId } },
         update: {},
-        create: { menuId: menu.id, role, access },
+        create: { menuId: menu.id, groupId, canRead: true, canCreate: g.write, canUpdate: g.write, canDelete: g.write },
       })
     }
   }
+  return groupIds
 }
 
 if (require.main === module) {

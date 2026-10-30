@@ -144,7 +144,7 @@ export function FileCard({ file, onClick }: Props) {
                   <Download size={14} />
                   <span>다운로드</span>
                 </DropdownMenuItem>
-                {file.canEdit && (
+                {file.canDelete && (
                   <>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem

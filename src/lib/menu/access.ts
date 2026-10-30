@@ -1,14 +1,13 @@
 import { getCurrentDbUser } from '@/lib/admin'
 import { getCachedMenus } from './cache'
-import type { MenuAccessValue } from './menu-schema'
-import { resolveMenuAccess } from './resolve'
+import { NO_PERMISSION, resolveMenuPermission, type MenuPermission, type PermissionAction } from './resolve'
 
-export async function getMenuAccess(path: string): Promise<MenuAccessValue> {
+export async function getMenuPermission(path: string): Promise<MenuPermission> {
   const user = await getCurrentDbUser()
-  if (!user) return 'NONE'
-  return resolveMenuAccess(await getCachedMenus(), user.role, path)
+  if (!user) return NO_PERMISSION
+  return resolveMenuPermission(await getCachedMenus(), user, path)
 }
 
-export async function requireMenuWrite(path: string): Promise<void> {
-  if ((await getMenuAccess(path)) !== 'WRITE') throw new Error('Forbidden')
+export async function requireMenuPermission(path: string, action: PermissionAction): Promise<void> {
+  if (!(await getMenuPermission(path))[action]) throw new Error('Forbidden')
 }

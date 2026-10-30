@@ -5,13 +5,7 @@ import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
 import { requireAdmin } from '@/lib/admin'
 import { invalidateMenuCache } from '@/lib/menu/cache'
-import {
-  PERMISSION_ROLES,
-  menuCreateSchema,
-  menuInputSchema,
-  type MenuCreateInput,
-  type MenuInput,
-} from '@/lib/menu/menu-schema'
+import { menuInputSchema, type MenuInput } from '@/lib/menu/menu-schema'
 import { canDeleteMenu, reorderSiblings } from '@/lib/menu/resolve'
 
 type ActionResult = { ok: true } | { error: string }
@@ -50,12 +44,13 @@ async function pathTaken(path: string | null, selfId?: string): Promise<boolean>
   return Boolean(found && found.id !== selfId)
 }
 
-export async function createMenu(input: MenuCreateInput): Promise<ActionResult> {
+// 새 메뉴는 어느 권한 그룹에도 열려 있지 않다. 권한관리에서 그룹별로 연다
+export async function createMenu(input: MenuInput): Promise<ActionResult> {
   await requireAdmin()
 
-  const parsed = menuCreateSchema.safeParse(input)
+  const parsed = menuInputSchema.safeParse(input)
   if (!parsed.success) return { error: parsed.error.issues[0].message }
-  const { type, title, parentId, path, icon, section, status, permissions } = parsed.data
+  const { type, title, parentId, path, icon, section, status } = parsed.data
 
   const parentError = await validateParent(parentId)
   if (parentError) return { error: parentError }
@@ -74,11 +69,6 @@ export async function createMenu(input: MenuCreateInput): Promise<ActionResult> 
           section,
           status,
           sortOrder: (last._max.sortOrder ?? -1) + 1,
-          ...(type !== 'GROUP' && {
-            permissions: {
-              create: PERMISSION_ROLES.map((role) => ({ role, access: permissions[role] })),
-            },
-          }),
         },
       })
     })

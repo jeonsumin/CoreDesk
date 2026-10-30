@@ -3,7 +3,7 @@ import { readFile } from 'fs/promises'
 import { resolveDriveStoragePath } from '@/lib/drive-upload-path'
 import { prisma } from '@/lib/prisma'
 import { getCurrentDbUser } from '@/lib/admin'
-import { getMenuAccess } from '@/lib/menu/access'
+import { getMenuPermission } from '@/lib/menu/access'
 import { getFolderContext } from '@/lib/drive/context'
 
 export async function GET(
@@ -30,8 +30,7 @@ export async function GET(
     })) !== null
 
   if (!ownsPortfolioImage) {
-    const menuAccess = await getMenuAccess('/drive')
-    if (menuAccess === 'NONE') {
+    if (!(await getMenuPermission('/drive')).read) {
       return new NextResponse('Not Found', { status: 404 })
     }
     if (file.folderId === null) {
@@ -39,7 +38,7 @@ export async function GET(
         return new NextResponse('Not Found', { status: 404 })
       }
     } else {
-      const ctx = await getFolderContext(file.folderId, user, menuAccess)
+      const ctx = await getFolderContext(file.folderId, user, 'READ')
       if (!ctx) {
         return new NextResponse('Not Found', { status: 404 })
       }

@@ -15,6 +15,7 @@ import { PageHeader } from '@/components/layout/PageHeader'
 import type { FolderPerms } from '@/lib/drive/permission-schema'
 import { uploadFile, createFolder } from '../_actions/drive'
 import { FolderPermissionFields } from './FolderPermissionFields'
+import type { ShareUserOption } from '@/types'
 
 // 빈 폴더 안내의 업로드 버튼(label)이 이 input을 연다
 export const DRIVE_UPLOAD_INPUT_ID = 'drive-upload-input'
@@ -22,9 +23,10 @@ export const DRIVE_UPLOAD_INPUT_ID = 'drive-upload-input'
 type Props = {
   folderId: string | null
   canWrite: boolean
+  shareUsers: ShareUserOption[]
 }
 
-export function DriveHeader({ folderId, canWrite }: Props) {
+export function DriveHeader({ folderId, canWrite, shareUsers }: Props) {
   const inputRef = useRef<HTMLInputElement>(null)
   const [isUploading, startUpload] = useTransition()
   const [isCreating, startCreate] = useTransition()
@@ -205,7 +207,7 @@ export function DriveHeader({ folderId, canWrite }: Props) {
           {folderId ? (
             <p className="text-xs text-muted-foreground">상위 폴더 권한을 따릅니다</p>
           ) : (
-            <FolderPermissionFields value={folderPerms} onChange={setFolderPerms} />
+            <FolderPermissionFields value={folderPerms} onChange={setFolderPerms} shareUsers={shareUsers} />
           )}
           <DialogFooter>
             <Button

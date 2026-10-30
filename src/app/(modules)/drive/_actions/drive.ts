@@ -3,7 +3,8 @@
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 import { getCurrentDbUser, type DbSessionUser } from '@/lib/admin'
-import { requireMenuWrite } from '@/lib/menu/access'
+import { requireMenuPermission } from '@/lib/menu/access'
+import type { PermissionAction } from '@/lib/menu/resolve'
 import { getFolderContext } from '@/lib/drive/context'
 import { canManageRoot, canModifyItem, canWriteInto } from '@/lib/drive/access'
 import { folderPermsSchema, type FolderPerms } from '@/lib/drive/permission-schema'
@@ -30,10 +31,22 @@ const renameSchema = z.object({
     .max(255, '이름이 너무 깁니다'),
 })
 
-async function getActor() {
-  await requireMenuWrite('/drive')
+async function getActor(action: PermissionAction) {
+  await requireMenuPermission('/drive', action)
   return getCurrentDbUser()
 }
+
+// 공유 대상은 활성 일반 사용자만 (최고 관리자는 이미 모두 볼 수 있고, 소유자는 자기 폴더다)
+async function hasInvalidShareTarget(perms: FolderPerms, ownerId: string): Promise<boolean> {
+  if (perms.length === 0) return false
+  const ids = perms.map((p) => p.userId)
+  const valid = await prisma.user.count({
+    where: { id: { in: ids, not: ownerId }, isActive: true, role: 'USER' },
+  })
+  return valid !== ids.length
+}
+
+const INVALID_SHARE = '공유할 수 없는 사용자가 포함되어 있습니다'
 
 // ─── Folder actions ───────────────────────────────────────────────────────────
 
@@ -42,7 +55,7 @@ export async function createFolder(
   parentId: string | null,
   perms?: FolderPerms
 ): Promise<ActionResult> {
-  const user = await getActor()
+  const user = await getActor('create')
   if (!user) return { success: false, error: '로그인이 필요합니다' }
 
   const parsed = nameSchema.safeParse({ name })
@@ -74,6 +87,10 @@ export async function createFolder(
       return { success: false, error: permsParsed.error.errors[0].message }
     }
 
+    if (await hasInvalidShareTarget(permsParsed.data, user.id)) {
+      return { success: false, error: INVALID_SHARE }
+    }
+
     const duplicate = await prisma.driveFolder.findFirst({
       where: { ownerId: user.id, parentId: null, name: trimmed },
     })
@@ -83,10 +100,9 @@ export async function createFolder(
       const folder = await tx.driveFolder.create({
         data: { name: trimmed, ownerId: user.id, parentId: null },
       })
-      const rows = permsParsed.data.filter((p) => p.access !== 'NONE')
-      if (rows.length > 0) {
+      if (permsParsed.data.length > 0) {
         await tx.driveFolderPermission.createMany({
-          data: rows.map((p) => ({ folderId: folder.id, role: p.role, access: p.access })),
+          data: permsParsed.data.map((p) => ({ folderId: folder.id, userId: p.userId, access: p.access })),
         })
       }
     })
@@ -97,7 +113,7 @@ export async function createFolder(
 }
 
 export async function renameFolder(id: string, newName: string): Promise<ActionResult> {
-  const user = await getActor()
+  const user = await getActor('update')
   if (!user) return { success: false, error: '로그인이 필요합니다' }
 
   const parsed = nameSchema.safeParse({ name: newName })
@@ -124,7 +140,7 @@ export async function renameFolder(id: string, newName: string): Promise<ActionR
 }
 
 export async function deleteFolder(id: string): Promise<ActionResult> {
-  const user = await getActor()
+  const user = await getActor('delete')
   if (!user) return { success: false, error: '로그인이 필요합니다' }
 
   const ctx = await getFolderContext(id, user, 'WRITE')
@@ -163,7 +179,7 @@ export async function setFolderPermissions(
   rootId: string,
   perms: FolderPerms
 ): Promise<ActionResult> {
-  const user = await getActor()
+  const user = await getActor('update')
   if (!user) return { success: false, error: '로그인이 필요합니다' }
 
   const ctx = await getFolderContext(rootId, user, 'WRITE')
@@ -183,13 +199,14 @@ export async function setFolderPermissions(
 
   const parsed = folderPermsSchema.safeParse(perms)
   if (!parsed.success) return { success: false, error: parsed.error.errors[0].message }
+  if (await hasInvalidShareTarget(parsed.data, ctx.root.ownerId)) {
+    return { success: false, error: INVALID_SHARE }
+  }
 
   await prisma.$transaction([
     prisma.driveFolderPermission.deleteMany({ where: { folderId: rootId } }),
     prisma.driveFolderPermission.createMany({
-      data: parsed.data
-        .filter((p) => p.access !== 'NONE')
-        .map((p) => ({ folderId: rootId, role: p.role, access: p.access })),
+      data: parsed.data.map((p) => ({ folderId: rootId, userId: p.userId, access: p.access })),
     }),
   ])
 
@@ -200,7 +217,7 @@ export async function setFolderPermissions(
 // ─── File actions ─────────────────────────────────────────────────────────────
 
 export async function uploadFile(formData: FormData): Promise<ActionResult> {
-  const user = await getActor()
+  const user = await getActor('create')
   if (!user) {
     return { success: false, error: '로그인이 필요합니다' }
   }
@@ -256,7 +273,7 @@ async function checkFileModify(
 }
 
 export async function deleteFile(id: string): Promise<ActionResult> {
-  const user = await getActor()
+  const user = await getActor('delete')
   if (!user) {
     return { success: false, error: '로그인이 필요합니다' }
   }
@@ -288,7 +305,7 @@ export async function renameFile(
   id: string,
   newName: string
 ): Promise<ActionResult> {
-  const user = await getActor()
+  const user = await getActor('update')
   if (!user) {
     return { success: false, error: '로그인이 필요합니다' }
   }

@@ -1,46 +1,19 @@
 'use client'
 
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
-import {
-  ACCESS_LABELS,
-  MENU_ACCESS,
-  PERMISSION_ROLES,
-  type MenuAccessValue,
-  type PermissionRole,
-} from '@/lib/menu/menu-schema'
-import { ROLE_LABELS } from '@/lib/system/user-schema'
-import type { FolderPerms } from '@/lib/drive/permission-schema'
+import { useState } from 'react'
+import { toggleShare, type FolderPerms } from '@/lib/drive/permission-schema'
+import type { ShareUserOption } from '@/types'
 
 type Props = {
   value: FolderPerms
   onChange: (v: FolderPerms) => void
+  shareUsers: ShareUserOption[]
 }
 
-const ACCESS_ITEMS = MENU_ACCESS.map((v) => ({ value: v, label: ACCESS_LABELS[v] }))
-
-const SHARED_DEFAULT: FolderPerms = PERMISSION_ROLES.map((role) => ({ role, access: 'READ' }))
-
-function isMenuAccess(v: string): v is MenuAccessValue {
-  return (MENU_ACCESS as readonly string[]).includes(v)
-}
-
-// 루트 폴더 공유 범위: 나만 보기(권한 행 없음) / 공유(역할별 숨김·읽기·쓰기)
-export function FolderPermissionFields({ value, onChange }: Props) {
-  const shared = value.length > 0
-
-  const accessOf = (role: PermissionRole): MenuAccessValue =>
-    value.find((p) => p.role === role)?.access ?? 'NONE'
-
-  const changeRole = (role: PermissionRole, v: string | null) => {
-    if (!v || !isMenuAccess(v)) return
-    onChange(PERMISSION_ROLES.map((r) => ({ role: r, access: r === role ? v : accessOf(r) })))
-  }
+// 루트 폴더 공유 범위: 나만 보기(권한 행 없음) / 공유(사용자별 읽기·쓰기)
+export function FolderPermissionFields({ value, onChange, shareUsers }: Props) {
+  const [shared, setShared] = useState(value.length > 0)
+  const accessOf = (userId: string) => value.find((p) => p.userId === userId)?.access
 
   return (
     <div className="space-y-3">
@@ -50,7 +23,10 @@ export function FolderPermissionFields({ value, onChange }: Props) {
             type="radio"
             name="folder-share"
             checked={!shared}
-            onChange={() => onChange([])}
+            onChange={() => {
+              setShared(false)
+              onChange([])
+            }}
             className="accent-primary"
           />
           나만 보기
@@ -60,38 +36,62 @@ export function FolderPermissionFields({ value, onChange }: Props) {
             type="radio"
             name="folder-share"
             checked={shared}
-            onChange={() => onChange(SHARED_DEFAULT)}
+            onChange={() => setShared(true)}
             className="accent-primary"
           />
           공유
         </label>
       </div>
 
-      {shared && (
-        <div className="space-y-2 rounded-lg border p-3">
-          {PERMISSION_ROLES.map((role) => (
-            <div key={role} className="flex items-center justify-between gap-3">
-              <span className="text-sm font-medium">{ROLE_LABELS[role]}</span>
-              <Select
-                items={ACCESS_ITEMS}
-                value={accessOf(role)}
-                onValueChange={(v) => changeRole(role, v)}
-              >
-                <SelectTrigger className="w-28" aria-label={`${ROLE_LABELS[role]} 권한`}>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {ACCESS_ITEMS.map((o) => (
-                    <SelectItem key={o.value} value={o.value}>
-                      {o.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          ))}
-        </div>
-      )}
+      {shared &&
+        (shareUsers.length === 0 ? (
+          <p className="rounded-lg border border-dashed px-3 py-4 text-center text-sm text-muted-foreground">
+            공유할 사용자가 없습니다.
+          </p>
+        ) : (
+          <div className="max-h-72 overflow-y-auto rounded-lg border">
+            <table className="w-full text-sm">
+              <thead className="sticky top-0 bg-muted/80 text-xs text-muted-foreground backdrop-blur">
+                <tr>
+                  <th className="px-3 py-2 text-left font-medium">사용자</th>
+                  <th className="w-14 px-2 py-2 font-medium">읽기</th>
+                  <th className="w-14 px-2 py-2 font-medium">쓰기</th>
+                </tr>
+              </thead>
+              <tbody>
+                {shareUsers.map((u) => {
+                  const access = accessOf(u.id)
+                  return (
+                    <tr key={u.id} className="border-t">
+                      <td className="px-3 py-2">
+                        <p className="font-medium">{u.name}</p>
+                        <p className="text-xs text-muted-foreground">{u.email}</p>
+                      </td>
+                      <td className="px-2 py-2 text-center">
+                        <input
+                          type="checkbox"
+                          checked={access !== undefined}
+                          onChange={(e) => onChange(toggleShare(value, u.id, 'READ', e.target.checked))}
+                          aria-label={`${u.name} 읽기`}
+                          className="size-4 cursor-pointer accent-primary"
+                        />
+                      </td>
+                      <td className="px-2 py-2 text-center">
+                        <input
+                          type="checkbox"
+                          checked={access === 'WRITE'}
+                          onChange={(e) => onChange(toggleShare(value, u.id, 'WRITE', e.target.checked))}
+                          aria-label={`${u.name} 쓰기`}
+                          className="size-4 cursor-pointer accent-primary"
+                        />
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        ))}
     </div>
   )
 }

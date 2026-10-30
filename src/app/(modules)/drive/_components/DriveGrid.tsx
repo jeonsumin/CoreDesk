@@ -9,13 +9,14 @@ import { DRIVE_UPLOAD_INPUT_ID } from './DriveHeader'
 import { FileCard } from './FileCard'
 import { FolderCard } from './FolderCard'
 import { PreviewModal } from './PreviewModal'
-import type { DriveFileItem, DriveFolderItem } from '@/types'
+import type { DriveFileItem, DriveFolderItem, ShareUserOption } from '@/types'
 
 type Props = {
   files: DriveFileItem[]
   folders: DriveFolderItem[]
   sharedFolders?: DriveFolderItem[]
   canWrite: boolean
+  shareUsers: ShareUserOption[]
 }
 
 const GRID_CLASS =
@@ -25,7 +26,7 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
   return <h2 className="mb-3 text-sm font-semibold text-muted-foreground">{children}</h2>
 }
 
-export function DriveGrid({ files, folders, sharedFolders = [], canWrite }: Props) {
+export function DriveGrid({ files, folders, sharedFolders = [], canWrite, shareUsers }: Props) {
   const [previewFile, setPreviewFile] = useState<DriveFileItem | null>(null)
   const [previewOpen, setPreviewOpen] = useState(false)
 
@@ -56,7 +57,7 @@ export function DriveGrid({ files, folders, sharedFolders = [], canWrite }: Prop
   const ownGrid = (
     <div className={GRID_CLASS}>
       {folders.map((folder) => (
-        <FolderCard key={folder.id} folder={folder} />
+        <FolderCard key={folder.id} folder={folder} shareUsers={shareUsers} />
       ))}
       {files.map((file) => (
         <FileCard
@@ -83,7 +84,7 @@ export function DriveGrid({ files, folders, sharedFolders = [], canWrite }: Prop
             <SectionTitle>공유 폴더</SectionTitle>
             <div className={GRID_CLASS}>
               {sharedFolders.map((folder) => (
-                <FolderCard key={folder.id} folder={folder} />
+                <FolderCard key={folder.id} folder={folder} shareUsers={shareUsers} />
               ))}
             </div>
           </section>

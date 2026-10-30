@@ -55,7 +55,7 @@ export function UserFormDialog(props: Props) {
     defaultValues: {
       name: user?.name ?? '',
       email: user?.email ?? '',
-      role: user?.role ?? 'MEMBER',
+      role: user?.role ?? 'USER',
       password: '',
     },
   })
@@ -66,7 +66,7 @@ export function UserFormDialog(props: Props) {
       reset({
         name: user?.name ?? '',
         email: user?.email ?? '',
-        role: user?.role ?? 'MEMBER',
+        role: user?.role ?? 'USER',
         password: '',
       })
       setError(null)

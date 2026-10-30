@@ -13,15 +13,17 @@ import {
 import type { FolderPerms } from '@/lib/drive/permission-schema'
 import { setFolderPermissions } from '../_actions/drive'
 import { FolderPermissionFields } from './FolderPermissionFields'
+import type { ShareUserOption } from '@/types'
 
 type Props = {
   folderId: string
   initial: FolderPerms
+  shareUsers: ShareUserOption[]
   open: boolean
   onOpenChange: (open: boolean) => void
 }
 
-export function FolderPermissionDialog({ folderId, initial, open, onOpenChange }: Props) {
+export function FolderPermissionDialog({ folderId, initial, shareUsers, open, onOpenChange }: Props) {
   const [perms, setPerms] = useState<FolderPerms>(initial)
   const [isPending, startTransition] = useTransition()
 
@@ -56,7 +58,7 @@ export function FolderPermissionDialog({ folderId, initial, open, onOpenChange }
         <DialogHeader>
           <DialogTitle>권한 설정</DialogTitle>
         </DialogHeader>
-        <FolderPermissionFields value={perms} onChange={setPerms} />
+        <FolderPermissionFields value={perms} onChange={setPerms} shareUsers={shareUsers} />
         <DialogFooter>
           <Button variant="outline" onClick={() => handleOpenChange(false)} disabled={isPending}>
             취소

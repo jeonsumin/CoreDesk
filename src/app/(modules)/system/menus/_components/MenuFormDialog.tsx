@@ -26,17 +26,12 @@ import {
 import { ICON_NAMES } from '@/lib/menu/icon-names'
 import { MENU_ICONS } from '@/lib/menu/icons'
 import {
-  ACCESS_LABELS,
-  DEFAULT_PERMISSIONS,
   MENU_SECTIONS,
   MENU_STATUSES,
   MENU_TYPES,
-  PERMISSION_ROLES,
-  menuCreateSchema,
   menuInputSchema,
-  type MenuCreateInput,
+  type MenuInput,
 } from '@/lib/menu/menu-schema'
-import { ROLE_LABELS } from '@/lib/system/user-schema'
 import { createMenu, updateMenu } from '../_actions/menu'
 import type { MenuRow } from './MenuTable'
 
@@ -48,7 +43,7 @@ const NONE = '__none__'
 
 type Props = { groups: GroupOption[] } & ({ mode: 'create' } | { mode: 'edit'; menu: MenuRow })
 
-const toValues = (menu: MenuRow | null): MenuCreateInput => ({
+const toValues = (menu: MenuRow | null): MenuInput => ({
   type: menu?.type ?? 'PAGE',
   title: menu?.title ?? '',
   parentId: menu?.parentId ?? null,
@@ -56,7 +51,6 @@ const toValues = (menu: MenuRow | null): MenuCreateInput => ({
   icon: ICON_NAMES.find((n) => n === menu?.icon) ?? 'Folder',
   section: MENU_SECTIONS.find((s) => s === menu?.section) ?? null,
   status: menu?.status ?? 'ACTIVE',
-  permissions: DEFAULT_PERMISSIONS,
 })
 
 export function MenuFormDialog(props: Props) {
@@ -73,8 +67,8 @@ export function MenuFormDialog(props: Props) {
     control,
     setValue,
     formState: { errors },
-  } = useForm<MenuCreateInput>({
-    resolver: zodResolver(isEdit ? menuInputSchema : menuCreateSchema),
+  } = useForm<MenuInput>({
+    resolver: zodResolver(menuInputSchema),
     defaultValues: toValues(menu),
   })
 
@@ -90,7 +84,7 @@ export function MenuFormDialog(props: Props) {
     }
   }
 
-  const onSubmit = (data: MenuCreateInput) => {
+  const onSubmit = (data: MenuInput) => {
     setError(null)
     startTransition(async () => {
       const result = menu ? await updateMenu(menu.id, data) : await createMenu(data)
@@ -305,41 +299,6 @@ export function MenuFormDialog(props: Props) {
               )}
             />
           </div>
-
-          {!isEdit && !isGroup && (
-            <div className="space-y-2">
-              <Label className="font-semibold">기본 권한</Label>
-              <div className="grid grid-cols-3 gap-2">
-                {PERMISSION_ROLES.map((role) => (
-                  <div key={role} className="space-y-1">
-                    <p className="text-xs text-muted-foreground">{ROLE_LABELS[role]}</p>
-                    <Controller
-                      control={control}
-                      name={`permissions.${role}`}
-                      render={({ field }) => (
-                        <Select
-                          items={Object.entries(ACCESS_LABELS).map(([value, label]) => ({ value, label }))}
-                          value={field.value}
-                          onValueChange={(v) => v && field.onChange(v)}
-                        >
-                          <SelectTrigger className="w-full">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {Object.entries(ACCESS_LABELS).map(([value, label]) => (
-                              <SelectItem key={value} value={value}>
-                                {label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      )}
-                    />
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
 
           {error && <p className="text-sm text-destructive">{error}</p>}
           <FormActions isPending={isPending} submitLabel={isEdit ? '변경사항 저장' : '메뉴 추가'} />

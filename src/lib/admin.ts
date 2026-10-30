@@ -3,7 +3,7 @@ import type { User } from '@prisma/client'
 import { auth } from './auth'
 import { prisma } from './prisma'
 
-export type DbSessionUser = Pick<User, 'id' | 'name' | 'email' | 'role' | 'isActive'>
+export type DbSessionUser = Pick<User, 'id' | 'name' | 'email' | 'role' | 'groupId' | 'isActive'>
 
 export const getCurrentDbUser = cache(async (): Promise<DbSessionUser | null> => {
   const session = await auth()
@@ -12,7 +12,7 @@ export const getCurrentDbUser = cache(async (): Promise<DbSessionUser | null> =>
 
   const user = await prisma.user.findUnique({
     where: { id },
-    select: { id: true, name: true, email: true, role: true, isActive: true },
+    select: { id: true, name: true, email: true, role: true, groupId: true, isActive: true },
   })
   if (!user || !user.isActive) return null
   return user

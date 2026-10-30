@@ -17,7 +17,7 @@ export async function getFolderContext(
   menuAccess: MenuAccessValue
 ): Promise<FolderContext | null> {
   const rootInclude = {
-    permissions: { where: { role: user.role } },
+    permissions: { where: { userId: user.id } },
     portfolio: { select: { id: true } },
   }
 
@@ -46,7 +46,7 @@ export async function getFolderContext(
     role: user.role,
     menuAccess,
     rootOwnerId: root.ownerId,
-    rolePerm: permissions[0]?.access ?? null,
+    userPerm: permissions[0]?.access ?? null,
   })
   if (access === 'NONE') return null
 

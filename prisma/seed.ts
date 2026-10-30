@@ -5,6 +5,7 @@ import { seedMenus } from './seed-menus'
 const prisma = new PrismaClient()
 
 async function main() {
+  const groups = await seedMenus(prisma)
   const hashedPassword = await bcrypt.hash('password123', 10)
 
   const admin = await prisma.user.upsert({
@@ -25,7 +26,8 @@ async function main() {
       name: '이수민 (개발자)',
       email: 'dev1@coredesk.com',
       password: hashedPassword,
-      role: Role.MEMBER,
+      role: Role.USER,
+      groupId: groups['멤버'],
     },
   })
 
@@ -36,7 +38,8 @@ async function main() {
       name: '박성호 (CEO)',
       email: 'ceo@coredesk.com',
       password: hashedPassword,
-      role: Role.MEMBER,
+      role: Role.USER,
+      groupId: groups['열람자'],
     },
   })
 
@@ -111,8 +114,6 @@ async function main() {
     }
     await prisma.project.update({ where: { id: project.id }, data: { issueSeq: number } })
   }
-
-  await seedMenus(prisma)
 
   console.log('Seed data created successfully')
 }

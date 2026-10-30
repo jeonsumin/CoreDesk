@@ -159,7 +159,7 @@ export function PreviewModal({ file, open, onOpenChange }: Props) {
             >
               <Download />
             </Button>
-            {file.canEdit && (
+            {file.canDelete && (
               <Button
                 variant="ghost"
                 size="icon-lg"

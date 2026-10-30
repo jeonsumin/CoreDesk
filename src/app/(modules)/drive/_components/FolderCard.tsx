@@ -22,10 +22,11 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { renameFolder, deleteFolder } from '../_actions/drive'
 import { FolderPermissionDialog } from './FolderPermissionDialog'
-import type { DriveFolderItem } from '@/types'
+import type { DriveFolderItem, ShareUserOption } from '@/types'
 
 type Props = {
   folder: DriveFolderItem
+  shareUsers: ShareUserOption[]
 }
 
 function formatDate(d: Date): string {
@@ -33,7 +34,7 @@ function formatDate(d: Date): string {
   return `${date.getFullYear()}.${String(date.getMonth() + 1).padStart(2, '0')}.${String(date.getDate()).padStart(2, '0')}`
 }
 
-export function FolderCard({ folder }: Props) {
+export function FolderCard({ folder, shareUsers }: Props) {
   const router = useRouter()
   const [renameOpen, setRenameOpen] = useState(false)
   const [newName, setNewName] = useState(folder.name)
@@ -43,8 +44,7 @@ export function FolderCard({ folder }: Props) {
 
   const itemCount = folder._count.children + folder._count.files
 
-  const isRoot = folder.parentId === null
-  const canDelete = isRoot ? folder.canManage : folder.canEdit
+  const canDelete = folder.canDelete
   const hasMenu = folder.canManage || folder.canEdit || canDelete
 
   const handleNavigate = () => {
@@ -182,6 +182,7 @@ export function FolderCard({ folder }: Props) {
         <FolderPermissionDialog
           folderId={folder.id}
           initial={folder.perms}
+          shareUsers={shareUsers}
           open={permOpen}
           onOpenChange={setPermOpen}
         />

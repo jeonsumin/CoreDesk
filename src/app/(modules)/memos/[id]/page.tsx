@@ -6,7 +6,7 @@ import { Panel } from '@/components/layout/Panel'
 import { MarkdownPreview } from '@/components/memo/MarkdownPreview'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { getMenuAccess } from '@/lib/menu/access'
+import { getMenuPermission } from '@/lib/menu/access'
 import { deleteMemoFormAction } from '../_actions/memo'
 import { cn } from '@/lib/utils'
 
@@ -42,7 +42,7 @@ export default async function MemoDetailPage({ params }: Props) {
 
   if (!memo) notFound()
 
-  const canEdit = (await getMenuAccess('/memos')) === 'WRITE'
+  const permission = await getMenuPermission('/memos')
 
   return (
     <Panel className="flex-1">
@@ -77,8 +77,9 @@ export default async function MemoDetailPage({ params }: Props) {
           </div>
         </div>
 
-        {canEdit && (
+        {(permission.update || permission.delete) && (
         <div className="flex shrink-0 gap-1.5">
+          {permission.update && (
           <Link
             href={`/memos/${memo.id}/edit`}
             aria-label="메모 수정"
@@ -87,6 +88,8 @@ export default async function MemoDetailPage({ params }: Props) {
           >
             <PencilLine />
           </Link>
+          )}
+          {permission.delete && (
           <form action={deleteMemoFormAction.bind(null, memo.id)}>
             <Button
               variant="destructive"
@@ -98,6 +101,7 @@ export default async function MemoDetailPage({ params }: Props) {
               <Trash2 />
             </Button>
           </form>
+          )}
         </div>
         )}
       </div>

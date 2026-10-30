@@ -16,7 +16,11 @@ export async function getCachedMenus(): Promise<MenuRecord[]> {
   if (cache && Date.now() - cache.loadedAt < TTL_MS) return cache.menus
 
   const rows = await prisma.menu.findMany({
-    include: { permissions: { select: { role: true, access: true } } },
+    include: {
+      permissions: {
+        select: { groupId: true, canRead: true, canCreate: true, canUpdate: true, canDelete: true },
+      },
+    },
   })
   const menus: MenuRecord[] = rows
   globalThis.__coredeskMenuCache = { menus, loadedAt: Date.now() }

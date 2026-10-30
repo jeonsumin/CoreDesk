@@ -1,10 +1,11 @@
 import { notFound, redirect } from 'next/navigation'
 import { getCurrentDbUser, type DbSessionUser } from '@/lib/admin'
-import { getMenuAccess } from '@/lib/menu/access'
+import { getMenuPermission } from '@/lib/menu/access'
+import type { MenuPermission } from '@/lib/menu/resolve'
 import { getFolderContext } from '@/lib/drive/context'
 import { canManageRoot, canModifyItem, canWriteInto, folderAccess } from '@/lib/drive/access'
 import type { FolderPerms } from '@/lib/drive/permission-schema'
-import { ACCESS_LABELS, type MenuAccessValue, type PermissionRole } from '@/lib/menu/menu-schema'
+import { ACCESS_LABELS, type MenuAccessValue } from '@/lib/menu/menu-schema'
 import { prisma } from '@/lib/prisma'
 import { Panel, PanelToolbar } from '@/components/layout/Panel'
 import { DriveHeader } from './_components/DriveHeader'
@@ -15,7 +16,7 @@ import type {
   DriveFileItem,
   DriveFolderItem,
   DriveFolderWithCount,
-  Role,
+  ShareUserOption,
 } from '@/types'
 
 export const dynamic = 'force-dynamic'
@@ -37,26 +38,23 @@ async function buildBreadcrumb(folderId: string | null): Promise<BreadcrumbItem[
   return crumbs
 }
 
-type PermRow = { role: Role; access: MenuAccessValue }
+type PermRow = { userId: string; access: MenuAccessValue }
 
 const countInclude = { _count: { select: { children: true, files: true } } } as const
 // storagePath는 서버 경로라 클라이언트로 보내지 않는다
 function toFileItem(
-  { storagePath, ...file }: Omit<DriveFileItem, 'canEdit'> & { storagePath: string },
-  canEdit: boolean
+  { storagePath, ...file }: Omit<DriveFileItem, 'canEdit' | 'canDelete'> & { storagePath: string },
+  canModify: boolean,
+  menu: MenuPermission
 ): DriveFileItem {
   void storagePath
-  return { ...file, canEdit }
+  return { ...file, canEdit: canModify && menu.update, canDelete: canModify && menu.delete }
 }
 
 const uploaderSelect = { uploader: { select: { id: true, name: true } } } as const
 
-function isPermissionRole(role: Role): role is PermissionRole {
-  return role !== 'ADMIN'
-}
-
 function toPerms(rows: PermRow[]): FolderPerms {
-  return rows.flatMap((r) => (isPermissionRole(r.role) ? [{ role: r.role, access: r.access }] : []))
+  return rows.flatMap((r) => (r.access === 'NONE' ? [] : [{ userId: r.userId, access: r.access }]))
 }
 
 function toFolderItem(
@@ -66,15 +64,17 @@ function toFolderItem(
   return { id, name, ownerId, parentId, rootId, createdAt, updatedAt, _count, ...extra }
 }
 
-async function loadRoot(user: DbSessionUser, menuAccess: MenuAccessValue) {
+// 폴더 공유 수준(숨김/읽기/쓰기)이 폴더 안에서 쓸 수 있는지를, 메뉴 권한이 어떤 쓰기(쓰기·수정·삭제)인지를 정한다
+async function loadRoot(user: DbSessionUser, menu: MenuPermission) {
   const isAdmin = user.role === 'ADMIN'
+  const menuAccess: MenuAccessValue = menu.read ? 'WRITE' : 'NONE'
   const [ownFolders, ownFiles, shared] = await Promise.all([
     prisma.driveFolder.findMany({
       where: { ownerId: user.id, parentId: null },
       orderBy: { name: 'asc' },
       include: {
         ...countInclude,
-        permissions: { select: { role: true, access: true } },
+        permissions: { select: { userId: true, access: true } },
         portfolio: { select: { id: true } },
       },
     }),
@@ -89,37 +89,39 @@ async function loadRoot(user: DbSessionUser, menuAccess: MenuAccessValue) {
         ownerId: { not: user.id },
         permissions: isAdmin
           ? { some: {} }
-          : { some: { role: user.role, access: { in: ['READ', 'WRITE'] } } },
+          : { some: { userId: user.id, access: { in: ['READ', 'WRITE'] } } },
       },
       orderBy: [{ owner: { name: 'asc' } }, { name: 'asc' }],
       include: {
         ...countInclude,
         owner: { select: { name: true } },
         permissions: isAdmin
-          ? { select: { role: true, access: true } }
-          : { where: { role: user.role }, select: { role: true, access: true } },
+          ? { select: { userId: true, access: true } }
+          : { where: { userId: user.id }, select: { userId: true, access: true } },
         portfolio: { select: { id: true } },
       },
     }),
   ])
 
   const folders = ownFolders.map((f) => {
-    const canManage =
-      menuAccess === 'WRITE' &&
-      canManageRoot({
-        userId: user.id,
-        role: user.role,
-        rootOwnerId: f.ownerId,
-        isPortfolio: f.portfolio !== null,
-      })
+    const ownsRoot = canManageRoot({
+      userId: user.id,
+      role: user.role,
+      rootOwnerId: f.ownerId,
+      isPortfolio: f.portfolio !== null,
+    })
+    const canManage = menu.update && ownsRoot
     return toFolderItem(f, {
-      canEdit: canModifyItem({
-        access: menuAccess,
-        userId: user.id,
-        role: user.role,
-        creatorId: f.ownerId,
-        rootOwnerId: user.id,
-      }),
+      canEdit:
+        menu.update &&
+        canModifyItem({
+          access: menuAccess,
+          userId: user.id,
+          role: user.role,
+          creatorId: f.ownerId,
+          rootOwnerId: user.id,
+        }),
+      canDelete: menu.delete && ownsRoot,
       canManage,
       badge: f.permissions.length > 0 ? '공유' : null,
       perms: canManage ? toPerms(f.permissions) : null,
@@ -132,33 +134,35 @@ async function loadRoot(user: DbSessionUser, menuAccess: MenuAccessValue) {
       role: user.role,
       menuAccess,
       rootOwnerId: f.ownerId,
-      rolePerm: f.permissions.find((p) => p.role === user.role)?.access ?? null,
+      userPerm: f.permissions.find((p) => p.userId === user.id)?.access ?? null,
     })
-    const canManage =
-      menuAccess === 'WRITE' &&
-      canManageRoot({
-        userId: user.id,
-        role: user.role,
-        rootOwnerId: f.ownerId,
-        isPortfolio: f.portfolio !== null,
-      })
+    const ownsRoot = canManageRoot({
+      userId: user.id,
+      role: user.role,
+      rootOwnerId: f.ownerId,
+      isPortfolio: f.portfolio !== null,
+    })
+    const canManage = menu.update && ownsRoot
     return toFolderItem(f, {
-      canEdit: canModifyItem({
-        access,
-        userId: user.id,
-        role: user.role,
-        creatorId: f.ownerId,
-        rootOwnerId: f.ownerId,
-      }),
+      canEdit:
+        menu.update &&
+        canModifyItem({
+          access,
+          userId: user.id,
+          role: user.role,
+          creatorId: f.ownerId,
+          rootOwnerId: f.ownerId,
+        }),
+      canDelete: menu.delete && ownsRoot,
       canManage,
       badge: `${f.owner.name} · ${ACCESS_LABELS[access]}`,
       perms: canManage ? toPerms(f.permissions) : null,
     })
   })
 
-  const files: DriveFileItem[] = ownFiles.map((file) => toFileItem(file, menuAccess === 'WRITE'))
+  const files: DriveFileItem[] = ownFiles.map((file) => toFileItem(file, true, menu))
 
-  return { folders, sharedFolders, files, canWrite: menuAccess === 'WRITE' }
+  return { folders, sharedFolders, files, canWrite: menu.create }
 }
 
 export default async function DrivePage({
@@ -168,7 +172,13 @@ export default async function DrivePage({
 }) {
   const user = await getCurrentDbUser()
   if (!user) redirect('/login')
-  const menuAccess = await getMenuAccess('/drive')
+  const menu = await getMenuPermission('/drive')
+  // 최고 관리자는 모든 폴더를 볼 수 있어 공유 대상에서 뺀다
+  const shareUsers: ShareUserOption[] = await prisma.user.findMany({
+    where: { isActive: true, role: 'USER', id: { not: user.id } },
+    select: { id: true, name: true, email: true },
+    orderBy: { name: 'asc' },
+  })
 
   const { folderId: rawFolderId } = await searchParams
   const folderId = rawFolderId ?? null
@@ -179,9 +189,9 @@ export default async function DrivePage({
   let canWrite: boolean
 
   if (!folderId) {
-    ;({ folders, sharedFolders, files, canWrite } = await loadRoot(user, menuAccess))
+    ;({ folders, sharedFolders, files, canWrite } = await loadRoot(user, menu))
   } else {
-    const ctx = await getFolderContext(folderId, user, menuAccess)
+    const ctx = await getFolderContext(folderId, user, menu.read ? 'WRITE' : 'NONE')
     if (!ctx) notFound()
 
     const [folderRows, fileRows] = await Promise.all([
@@ -206,17 +216,23 @@ export default async function DrivePage({
       })
 
     folders = folderRows.map((f) =>
-      toFolderItem(f, { canEdit: canModify(f.ownerId), canManage: false, badge: null, perms: null })
+      toFolderItem(f, {
+        canEdit: menu.update && canModify(f.ownerId),
+        canDelete: menu.delete && canModify(f.ownerId),
+        canManage: false,
+        badge: null,
+        perms: null,
+      })
     )
-    files = fileRows.map((file) => toFileItem(file, canModify(file.uploaderId)))
-    canWrite = canWriteInto(ctx.access)
+    files = fileRows.map((file) => toFileItem(file, canModify(file.uploaderId), menu))
+    canWrite = menu.create && canWriteInto(ctx.access)
   }
 
   const breadcrumb = await buildBreadcrumb(folderId)
 
   return (
     <div className="flex h-full min-h-0 flex-col gap-6">
-      <DriveHeader folderId={folderId} canWrite={canWrite} />
+      <DriveHeader folderId={folderId} canWrite={canWrite} shareUsers={shareUsers} />
       <Panel className="flex-1">
         <PanelToolbar className="justify-between">
           <DriveBreadcrumb breadcrumb={breadcrumb} />
@@ -230,6 +246,7 @@ export default async function DrivePage({
             folders={folders}
             sharedFolders={sharedFolders}
             canWrite={canWrite}
+            shareUsers={shareUsers}
           />
         </div>
       </Panel>

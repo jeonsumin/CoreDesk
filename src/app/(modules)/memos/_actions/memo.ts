@@ -5,7 +5,7 @@ import { redirect } from 'next/navigation'
 import { auth } from '@/lib/auth'
 import { parseMemoFormData } from '@/lib/memo/validation'
 import { prisma } from '@/lib/prisma'
-import { requireMenuWrite } from '@/lib/menu/access'
+import { requireMenuPermission } from '@/lib/menu/access'
 
 type ActionResult = { error?: string }
 
@@ -24,7 +24,7 @@ async function findOwnMemo(id: string, ownerId: string) {
 }
 
 export async function createMemo(formData: FormData): Promise<ActionResult> {
-  await requireMenuWrite('/memos')
+  await requireMenuPermission('/memos', 'create')
   const ownerId = await ensureAuthenticated()
   const parsed = parseMemoFormData(formData)
   if (!parsed.success) return { error: parsed.error }
@@ -45,7 +45,7 @@ export async function updateMemo(
   id: string,
   formData: FormData,
 ): Promise<ActionResult> {
-  await requireMenuWrite('/memos')
+  await requireMenuPermission('/memos', 'update')
   const ownerId = await ensureAuthenticated()
   if (!(await findOwnMemo(id, ownerId))) {
     return { error: '메모를 찾을 수 없습니다' }
@@ -68,7 +68,7 @@ export async function updateMemo(
 }
 
 export async function deleteMemo(id: string): Promise<ActionResult> {
-  await requireMenuWrite('/memos')
+  await requireMenuPermission('/memos', 'delete')
   const ownerId = await ensureAuthenticated()
   if (!(await findOwnMemo(id, ownerId))) {
     return { error: '메모를 찾을 수 없습니다' }
@@ -81,7 +81,6 @@ export async function deleteMemo(id: string): Promise<ActionResult> {
 }
 
 export async function deleteMemoFormAction(id: string): Promise<void> {
-  await requireMenuWrite('/memos')
   const result = await deleteMemo(id)
   if (result.error) throw new Error(result.error)
 }

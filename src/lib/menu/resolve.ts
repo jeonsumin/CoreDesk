@@ -1,6 +1,28 @@
 import type { RoleValue } from '../system/user-schema'
-import type { MenuAccessValue, MenuSection, MenuStatusValue, MenuTypeValue } from './menu-schema'
+import type { MenuSection, MenuStatusValue, MenuTypeValue } from './menu-schema'
 import type { IconName } from './icon-names'
+
+export const PERMISSION_ACTIONS = ['read', 'create', 'update', 'delete'] as const
+export type PermissionAction = (typeof PERMISSION_ACTIONS)[number]
+export type MenuPermission = Record<PermissionAction, boolean>
+
+export const PERMISSION_ACTION_LABELS: Record<PermissionAction, string> = {
+  read: '읽기',
+  create: '쓰기',
+  update: '수정',
+  delete: '삭제',
+}
+
+export const FULL_PERMISSION: MenuPermission = { read: true, create: true, update: true, delete: true }
+export const NO_PERMISSION: MenuPermission = { read: false, create: false, update: false, delete: false }
+
+export type MenuPermissionRow = {
+  groupId: string
+  canRead: boolean
+  canCreate: boolean
+  canUpdate: boolean
+  canDelete: boolean
+}
 
 export type MenuRecord = {
   id: string
@@ -13,27 +35,44 @@ export type MenuRecord = {
   status: MenuStatusValue
   isSystem: boolean
   section: MenuSection | string | null
-  permissions: { role: RoleValue; access: MenuAccessValue }[]
+  permissions: MenuPermissionRow[]
 }
 
 export type MenuTreeNode = MenuRecord & { children: MenuTreeNode[] }
 
-const accessFor = (menu: MenuRecord, role: RoleValue): MenuAccessValue =>
-  menu.isSystem ? 'NONE' : (menu.permissions.find((p) => p.role === role)?.access ?? 'NONE')
+export type MenuViewer = { role: RoleValue; groupId: string | null }
 
-export function resolveMenuAccess(
+// 읽기 없이 쓰기·수정·삭제만 있는 상태는 메뉴가 숨겨져 의미가 없으므로 만들지 않는다
+export function togglePermission(
+  current: MenuPermission,
+  action: PermissionAction,
+  checked: boolean,
+): MenuPermission {
+  if (action === 'read' && !checked) return NO_PERMISSION
+  return { ...current, [action]: checked, read: current.read || checked }
+}
+
+export const toMenuPermission = (row: MenuPermissionRow | undefined): MenuPermission =>
+  row
+    ? { read: row.canRead, create: row.canCreate, update: row.canUpdate, delete: row.canDelete }
+    : NO_PERMISSION
+
+const permissionFor = (menu: MenuRecord, viewer: MenuViewer): MenuPermission =>
+  menu.isSystem ? NO_PERMISSION : toMenuPermission(menu.permissions.find((p) => p.groupId === viewer.groupId))
+
+export function resolveMenuPermission(
   menus: MenuRecord[],
-  role: RoleValue,
+  viewer: MenuViewer,
   pathname: string,
-): MenuAccessValue {
-  if (role === 'ADMIN') return 'WRITE'
+): MenuPermission {
+  if (viewer.role === 'ADMIN') return FULL_PERMISSION
   let best: MenuRecord | null = null
   for (const m of menus) {
     if (m.type !== 'PAGE' || !m.path) continue
     if (pathname !== m.path && !pathname.startsWith(`${m.path}/`)) continue
     if (!best || m.path.length > (best.path ?? '').length) best = m
   }
-  return best ? accessFor(best, role) : 'WRITE'
+  return best ? permissionFor(best, viewer) : FULL_PERMISSION
 }
 
 const byOrder = (a: MenuRecord, b: MenuRecord) =>
@@ -54,14 +93,14 @@ export function buildMenuTree(menus: MenuRecord[]): MenuTreeNode[] {
   return roots
 }
 
-export function filterVisibleMenus(tree: MenuTreeNode[], role: RoleValue): MenuTreeNode[] {
-  if (role === 'ADMIN') return tree
+export function filterVisibleMenus(tree: MenuTreeNode[], viewer: MenuViewer): MenuTreeNode[] {
+  if (viewer.role === 'ADMIN') return tree
   const out: MenuTreeNode[] = []
   for (const n of tree) {
     if (n.type === 'GROUP') {
-      const children = filterVisibleMenus(n.children, role)
+      const children = filterVisibleMenus(n.children, viewer)
       if (children.length > 0) out.push({ ...n, children })
-    } else if (accessFor(n, role) !== 'NONE') {
+    } else if (permissionFor(n, viewer).read) {
       out.push(n)
     }
   }

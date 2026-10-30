@@ -3,9 +3,9 @@ const test = require('node:test')
 const assert = require('node:assert/strict')
 const { createUserSchema, updateUserSchema, ROLES } = require('../src/lib/system/user-schema.ts')
 
-const base = { name: '홍길동', email: 'a@b.com', role: 'MEMBER', password: 'secret1' }
+const base = { name: '홍길동', email: 'a@b.com', role: 'USER', password: 'secret1' }
 
-test('ROLES는 4개 역할', () => assert.deepEqual([...ROLES], ['ADMIN', 'MANAGER', 'MEMBER', 'VIEWER']))
+test('ROLES는 사용자·최고 관리자', () => assert.deepEqual([...ROLES], ['USER', 'ADMIN']))
 test('생성: 정상 입력 통과', () => assert.equal(createUserSchema.safeParse(base).success, true))
 test('생성: 비밀번호 6자 미만 거부', () =>
   assert.equal(createUserSchema.safeParse({ ...base, password: '12345' }).success, false))

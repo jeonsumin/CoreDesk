@@ -7,7 +7,7 @@ import { EmptyState, Panel, PanelHeader, PanelToolbar } from '@/components/layou
 import { auth } from '@/lib/auth'
 import { parseMemoSearchParams } from '@/lib/memo/validation'
 import { prisma } from '@/lib/prisma'
-import { getMenuAccess } from '@/lib/menu/access'
+import { getMenuPermission } from '@/lib/menu/access'
 import { MemoCard } from './_components/MemoCard'
 import type { Prisma } from '@prisma/client'
 
@@ -21,7 +21,7 @@ export default async function MemosPage({ searchParams }: Props) {
   const session = await auth()
   if (!session?.user?.id) redirect('/login')
 
-  const canWrite = (await getMenuAccess('/memos')) === 'WRITE'
+  const canWrite = (await getMenuPermission('/memos')).create
   const params = await searchParams
   const { q } = parseMemoSearchParams(params)
 

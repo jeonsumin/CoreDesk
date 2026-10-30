@@ -1,13 +1,12 @@
 import { z } from 'zod'
 
-export const ROLES = ['ADMIN', 'MANAGER', 'MEMBER', 'VIEWER'] as const
+export const ROLES = ['USER', 'ADMIN'] as const
 export type RoleValue = (typeof ROLES)[number]
 
+// 메뉴 권한은 권한 그룹으로 나누고, 역할은 관리 메뉴 접근 여부만 정한다
 export const ROLE_LABELS: Record<RoleValue, string> = {
-  ADMIN: '최고관리자',
-  MANAGER: '매니저',
-  MEMBER: '멤버',
-  VIEWER: '열람자',
+  USER: '사용자',
+  ADMIN: '최고 관리자',
 }
 
 const PASSWORD_MESSAGE = '비밀번호는 6자 이상이어야 합니다'

@@ -2,7 +2,7 @@ import { notFound, redirect } from 'next/navigation'
 import { PencilLine } from 'lucide-react'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { getMenuAccess } from '@/lib/menu/access'
+import { getMenuPermission } from '@/lib/menu/access'
 import { MemoForm } from '@/components/memo/MemoForm'
 import { FormPanel } from '@/components/layout/FormPanel'
 import { updateMemo } from '../../_actions/memo'
@@ -14,7 +14,7 @@ type Props = {
 export default async function EditMemoPage({ params }: Props) {
   const session = await auth()
   if (!session?.user?.id) redirect('/login')
-  if ((await getMenuAccess('/memos')) !== 'WRITE') notFound()
+  if (!(await getMenuPermission('/memos')).update) notFound()
 
   const { id } = await params
   const memo = await prisma.memo.findFirst({

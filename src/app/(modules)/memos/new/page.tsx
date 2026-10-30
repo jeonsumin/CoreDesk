@@ -1,12 +1,12 @@
 import { notFound } from 'next/navigation'
 import { FilePlus } from 'lucide-react'
-import { getMenuAccess } from '@/lib/menu/access'
+import { getMenuPermission } from '@/lib/menu/access'
 import { MemoForm } from '@/components/memo/MemoForm'
 import { FormPanel } from '@/components/layout/FormPanel'
 import { createMemo } from '../_actions/memo'
 
 export default async function NewMemoPage() {
-  if ((await getMenuAccess('/memos')) !== 'WRITE') notFound()
+  if (!(await getMenuPermission('/memos')).create) notFound()
 
   return (
     <FormPanel wide

@@ -23,7 +23,7 @@ export default async function ModulesLayout({
   const cookieStore = await cookies()
   const defaultOpen = cookieStore.get('sidebar_state')?.value !== 'false'
 
-  const menus = toSidebarNodes(filterVisibleMenus(buildMenuTree(await getCachedMenus()), user.role))
+  const menus = toSidebarNodes(filterVisibleMenus(buildMenuTree(await getCachedMenus()), user))
 
   async function signOutAction() {
     'use server'

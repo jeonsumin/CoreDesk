@@ -13,7 +13,8 @@
     "drive:backfill-root": "ts-node --compiler-options '{\"module\":\"CommonJS\"}' prisma/backfill-drive-root.ts",
     "admin:create": "node scripts/create-admin.cjs",
     "migrate:issue-board": "node scripts/migrate-issue-board.cjs",
-    "secrets:encrypt": "node scripts/encrypt-project-info-secrets.cjs"
+    "secrets:encrypt": "node scripts/encrypt-project-info-secrets.cjs",
+    "migrate:permission-groups": "node scripts/migrate-permission-groups.cjs"
   },
   "prisma": {
     "seed": "ts-node --compiler-options {\"module\":\"CommonJS\"} prisma/seed.ts"

@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation'
 import { FilePlus } from 'lucide-react'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { getMenuAccess } from '@/lib/menu/access'
+import { getMenuPermission } from '@/lib/menu/access'
 import { buttonVariants } from '@/components/ui/button'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { MemoListPanel } from './_components/MemoListPanel'
@@ -23,7 +23,7 @@ export default async function MemosLayout({
   const session = await auth()
   if (!session?.user?.id) redirect('/login')
 
-  const canWrite = (await getMenuAccess('/memos')) === 'WRITE'
+  const canWrite = (await getMenuPermission('/memos')).create
 
   const memos = await prisma.memo.findMany({
     where: { ownerId: session.user.id, projectId: null },

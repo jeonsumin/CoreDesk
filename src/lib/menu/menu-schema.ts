@@ -10,17 +10,8 @@ export type MenuStatusValue = (typeof MENU_STATUSES)[number]
 export const MENU_ACCESS = ['NONE', 'READ', 'WRITE'] as const
 export type MenuAccessValue = (typeof MENU_ACCESS)[number]
 
-export const PERMISSION_ROLES = ['MANAGER', 'MEMBER', 'VIEWER'] as const
-export type PermissionRole = (typeof PERMISSION_ROLES)[number]
-
 export const MENU_SECTIONS = ['업무', '자료', '관리'] as const
 export type MenuSection = (typeof MENU_SECTIONS)[number]
-
-export const DEFAULT_PERMISSIONS: Record<PermissionRole, MenuAccessValue> = {
-  MANAGER: 'WRITE',
-  MEMBER: 'WRITE',
-  VIEWER: 'READ',
-}
 
 export const ACCESS_LABELS: Record<MenuAccessValue, string> = {
   NONE: '숨김',
@@ -84,15 +75,10 @@ export const menuInputSchema = z
     section: v.parentId ? null : v.section,
   }))
 
-const permissionsSchema = z.object({
-  MANAGER: z.enum(MENU_ACCESS),
-  MEMBER: z.enum(MENU_ACCESS),
-  VIEWER: z.enum(MENU_ACCESS),
-})
-
-export const menuCreateSchema = z
-  .object({ permissions: permissionsSchema.default(DEFAULT_PERMISSIONS) })
-  .and(menuInputSchema)
+export const groupNameSchema = z
+  .string()
+  .trim()
+  .min(1, '이름은 1~30자로 입력해주세요')
+  .max(30, '이름은 1~30자로 입력해주세요')
 
 export type MenuInput = z.infer<typeof menuInputSchema>
-export type MenuCreateInput = z.infer<typeof menuCreateSchema>

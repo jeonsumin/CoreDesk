@@ -12,18 +12,35 @@ model User {
   name      String
   email     String   @unique
   password  String
-  role      Role     @default(MEMBER)
+  role      Role     @default(USER)
+  // 사용자는 권한 그룹 하나에 속한다. 그룹이 없으면 메뉴 권한이 없다 (최고 관리자는 그룹과 무관)
+  groupId   String?
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
 
-  ownedProjects  Project[]       @relation("ProjectOwner")
+  group PermissionGroup? @relation(fields: [groupId], references: [id], onDelete: SetNull)
+
+  ownedProjects  Project[]               @relation("ProjectOwner")
   projectMembers ProjectMember[]
   assignedTasks  TaskAssignee[]
-  createdTasks   Task[]          @relation("TaskCreator")
-  uploadedFiles  DriveFile[]     @relation("FileUploader")
-  ownedFolders   DriveFolder[]   @relation("FolderOwner")
-  portfolios     Portfolio[]     @relation("PortfolioOwner")
-  memos          Memo[]          @relation("MemoOwner")
+  createdTasks   Task[]                  @relation("TaskCreator")
+  uploadedFiles  DriveFile[]             @relation("FileUploader")
+  ownedFolders   DriveFolder[]           @relation("FolderOwner")
+  portfolios     Portfolio[]             @relation("PortfolioOwner")
+  memos          Memo[]                  @relation("MemoOwner")
+  sharedFolders  DriveFolderPermission[]
+
+  @@index([groupId])
+}
+
+model PermissionGroup {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+
+  users           User[]
+  menuPermissions MenuPermission[]
 }
 
 model Project {
@@ -164,14 +181,17 @@ model DriveFolder {
   @@index([rootId])
 }
 
+// 루트 폴더를 사용자별로 공유한다. 행이 없으면 공유 안 함 (access는 READ 또는 WRITE)
 model DriveFolderPermission {
   folderId String
-  role     Role
+  userId   String
   access   MenuAccess
 
   folder DriveFolder @relation(fields: [folderId], references: [id], onDelete: Cascade)
+  user   User        @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@id([folderId, role])
+  @@id([folderId, userId])
+  @@index([userId])
 }
 
 model DriveFile {
@@ -260,9 +280,7 @@ model Memo {
 
 enum Role {
   ADMIN
-  MANAGER
-  MEMBER
-  VIEWER
+  USER
 }
 
 enum MemberRole {
@@ -339,10 +357,16 @@ model Menu {
 }
 
 model MenuPermission {
-  menuId String
-  role   Role
-  access MenuAccess
-  menu   Menu       @relation(fields: [menuId], references: [id], onDelete: Cascade)
+  menuId    String
+  groupId   String
+  canRead   Boolean @default(false)
+  canCreate Boolean @default(false)
+  canUpdate Boolean @default(false)
+  canDelete Boolean @default(false)
 
-  @@id([menuId, role])
+  menu  Menu            @relation(fields: [menuId], references: [id], onDelete: Cascade)
+  group PermissionGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@id([menuId, groupId])
+  @@index([groupId])
 }

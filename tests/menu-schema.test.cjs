@@ -2,7 +2,7 @@ const assert = require('node:assert/strict')
 const test = require('node:test')
 require('./_ts.cjs')
 
-const { menuInputSchema, menuCreateSchema } = require('../src/lib/menu/menu-schema.ts')
+const { menuInputSchema } = require('../src/lib/menu/menu-schema.ts')
 const page = { type: 'PAGE', title: '내 태스크', parentId: null, path: '/my-tasks', icon: 'ListTodo', status: 'ACTIVE' }
 const ok = (v) => menuInputSchema.safeParse(v).success
 
@@ -32,8 +32,6 @@ test('이름 trim, 0자·31자 거부', () => {
   assert.equal(ok({ ...page, title: 'a'.repeat(31) }), false)
 })
 test('허용 목록 밖 아이콘 거부', () => assert.equal(ok({ ...page, icon: 'Skull' }), false))
-test('create: permissions 기본값', () =>
-  assert.deepEqual(menuCreateSchema.parse(page).permissions, { MANAGER: 'WRITE', MEMBER: 'WRITE', VIEWER: 'READ' }))
 test('section 허용', () => assert.equal(menuInputSchema.parse({ ...page, section: '업무' }).section, '업무'))
 test('section 미지정 시 null', () => assert.equal(menuInputSchema.parse(page).section, null))
 test('알 수 없는 section 거부', () => assert.equal(ok({ ...page, section: '기타' }), false))
@@ -56,4 +54,11 @@ test('LINK: 192자 경로 거부', () => {
   const path = 'https://x.com/' + 'a'.repeat(192 - 14)
   assert.equal(path.length, 192)
   assert.equal(ok({ ...page, type: 'LINK', path }), false)
+})
+
+const { groupNameSchema } = require('../src/lib/menu/menu-schema.ts')
+test('권한 그룹 이름: 앞뒤 공백 제거, 1~30자', () => {
+  assert.equal(groupNameSchema.parse('  개발팀 '), '개발팀')
+  assert.equal(groupNameSchema.safeParse('  ').success, false)
+  assert.equal(groupNameSchema.safeParse('a'.repeat(31)).success, false)
 })

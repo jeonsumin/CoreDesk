@@ -73,6 +73,7 @@ export type DriveFolderWithCount = DriveFolder & {
 
 export type DriveFolderItem = DriveFolderWithCount & {
   canEdit: boolean
+  canDelete: boolean
   canManage: boolean
   badge: string | null
   perms: FolderPerms | null
@@ -81,7 +82,10 @@ export type DriveFolderItem = DriveFolderWithCount & {
 export type DriveFileItem = Omit<DriveFile, 'storagePath'> & {
   uploader: Pick<User, 'id' | 'name'>
   canEdit: boolean
+  canDelete: boolean
 }
+
+export type ShareUserOption = Pick<User, 'id' | 'name' | 'email'>
 
 export type BreadcrumbItem = Pick<DriveFolder, 'id' | 'name'>
 

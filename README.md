@@ -131,6 +131,77 @@ docker compose down -v            # 중지 + DB/node_modules 볼륨 삭제
 
 자세한 운영 절차는 [docs/DEPLOYMENT.md](./docs/DEPLOYMENT.md)를 참고하세요.
 
+## 운영 DB 반영: 권한 그룹 전환
+
+사용자 역할이 `ADMIN/MANAGER/MEMBER/VIEWER` 4개에서 **사용자 / 최고 관리자** 2개로 바뀌고, 메뉴 권한은 관리자가 만드는 **권한 그룹**(읽기·쓰기·수정·삭제)으로 관리합니다. 드라이브 폴더 공유는 역할이 아니라 **사용자별**(읽기·쓰기)로 바뀝니다.
+
+DB 구조가 바뀌므로 기존 데이터가 있는 DB에는 아래 순서를 반드시 지킵니다.
+
+> **이관 스크립트보다 먼저 `prisma db push`를 실행하지 마세요.** 기존 역할 값 때문에 실패하거나, 성공하더라도 기존 메뉴·폴더 권한이 사라집니다.
+> k8s 배포의 init 컨테이너(`prisma migrate deploy`)는 이 변경을 반영하지 않습니다. 이관은 아래 스크립트로만 합니다.
+
+### 1. DB 백업
+
+```bash
+mysqldump -h <host> -u <user> -p --single-transaction --no-tablespaces <db> > coredesk-before-permission-groups.sql
+```
+
+### 2. 앱 중지
+
+이전 버전 앱은 새 구조의 DB에서 오류가 나고, 이관 중 쓰기가 섞이면 안 되므로 먼저 멈춥니다.
+
+```bash
+kubectl -n coredesk scale deployment coredesk --replicas=0   # k8s
+pm2 stop next-app                                            # pm2
+```
+
+### 3. 이관 스크립트 실행
+
+새 버전 코드에서 의존성을 설치한 뒤, 운영 DB 주소를 **명시적으로** 넘겨 실행합니다.
+
+```bash
+npm ci
+DATABASE_URL="mysql://<user>:<password>@<host>:3306/<db>" npm run migrate:permission-groups
+```
+
+스크립트가 하는 일:
+
+1. 기존 역할별 메뉴·폴더 권한과 사용자 역할을 백업 파일(JSON, 경로는 실행 로그에 출력)로 저장
+2. 최고 관리자(`ADMIN`)를 뺀 사용자 역할을 `USER`로 변경
+3. `prisma db push`로 새 구조 반영, `prisma generate`
+4. 권한 그룹을 만들고 데이터를 옮김
+
+| 기존 | 이관 후 |
+| --- | --- |
+| 역할 `ADMIN` | 최고 관리자 (그룹 없음, 모든 메뉴) |
+| 역할 `MANAGER` / `MEMBER` / `VIEWER` | 사용자 + 권한 그룹 `매니저` / `멤버` / `열람자` |
+| 메뉴 권한 `쓰기` | 읽기·쓰기·수정·삭제 모두 |
+| 메뉴 권한 `읽기` | 읽기만 |
+| 메뉴 권한 `숨김` | 권한 없음 |
+| 역할별 폴더 공유 (`읽기`/`쓰기`) | 그 역할이던 사용자 각각에게 같은 권한 (폴더 소유자 제외) |
+
+실행 로그 마지막 줄이 `그룹 3개, 메뉴 권한 N건, 폴더 권한 N건 이관 완료`이면 성공입니다. 중간에 실패해도 같은 명령을 다시 실행하면 됩니다(이미 옮긴 데이터는 덮어쓰기만 합니다).
+
+### 4. 새 버전 배포·기동
+
+```bash
+kubectl -n coredesk scale deployment coredesk --replicas=1   # k8s (새 이미지 배포 후)
+pm2 start next-app                                           # pm2 (새 버전 빌드 후)
+```
+
+### 5. 확인
+
+- 최고 관리자로 로그인 → 시스템관리 > 권한관리에서 `매니저`·`멤버`·`열람자` 그룹과 소속 사용자, 메뉴 권한이 이전과 같은지 확인
+- 일반 사용자로 로그인 → 사이드바에 권한 있는 메뉴만 보이고 시스템관리가 없는지 확인
+
+### 되돌리기
+
+1번에서 받은 백업을 복원하고 이전 버전을 배포합니다.
+
+```bash
+mysql -h <host> -u <user> -p <db> < coredesk-before-permission-groups.sql
+```
+
 ## 프로젝트 구조
 
 ```text

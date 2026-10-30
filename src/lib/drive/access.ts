@@ -1,13 +1,12 @@
 import { MenuAccessValue, MENU_ACCESS } from '../menu/menu-schema'
-
-export type Role = 'ADMIN' | 'MANAGER' | 'MEMBER' | 'VIEWER'
+import type { RoleValue as Role } from '../system/user-schema'
 
 interface FolderAccessInput {
   userId: string
   role: Role
   menuAccess: MenuAccessValue
   rootOwnerId: string
-  rolePerm: MenuAccessValue | null
+  userPerm: MenuAccessValue | null
 }
 
 interface CanModifyItemInput {
@@ -34,11 +33,11 @@ export function folderAccess(i: FolderAccessInput): MenuAccessValue {
     return i.menuAccess
   }
 
-  if (i.rolePerm === null) {
+  if (i.userPerm === null) {
     return 'NONE'
   }
 
-  return getMinAccess(i.menuAccess, i.rolePerm)
+  return getMinAccess(i.menuAccess, i.userPerm)
 }
 
 export function canModifyItem(i: CanModifyItemInput): boolean {

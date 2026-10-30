@@ -1,7 +1,7 @@
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { getCachedMenus } from '@/lib/menu/cache'
-import { resolveMenuAccess } from '@/lib/menu/resolve'
+import { resolveMenuPermission } from '@/lib/menu/resolve'
 import { NextResponse } from 'next/server'
 
 export default auth(async (req) => {
@@ -25,12 +25,12 @@ export default auth(async (req) => {
   if (isAuthenticated && !isPublicPage) {
     const userId = req.auth?.user?.id
     const user = userId
-      ? await prisma.user.findUnique({ where: { id: userId }, select: { role: true, isActive: true } })
+      ? await prisma.user.findUnique({ where: { id: userId }, select: { role: true, groupId: true, isActive: true } })
       : null
     if (!user || !user.isActive) {
       return NextResponse.redirect(new URL('/api/logout', req.url), 303)
     }
-    if (resolveMenuAccess(await getCachedMenus(), user.role, pathname) === 'NONE') {
+    if (!resolveMenuPermission(await getCachedMenus(), user, pathname).read) {
       return NextResponse.rewrite(new URL('/__forbidden', req.url))
     }
   }
